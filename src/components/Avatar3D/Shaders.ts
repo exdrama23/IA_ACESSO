@@ -55,7 +55,8 @@ export const vertexShader = `
     vNormal = normal;
     vUv = uv;
     vPosition = position;
-    float noise = snoise(vec3(position * 2.5 + uTime * 0.5));
+    // Ajustado para que o ruído se mova INDEPENDENTE da rotação da malha, usando apenas o tempo
+    float noise = snoise(vec3(position * 2.5 + uTime * 0.8));
     vec3 newPosition = position + normal * noise * uIntensity;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
   }
@@ -87,6 +88,51 @@ export const fragmentShader = `
     }
 
     vec3 finalColor = mix(baseColor, glowColor, fresnel * 0.6);
+    gl_FragColor = vec4(finalColor, 1.0);
+  }
+`;
+
+export const epicenterVertexShader = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+export const epicenterFragmentShader = `
+  varying vec2 vUv;
+  uniform float uTime;
+  uniform float uIntensity; // Força das ondas
+
+  void main() {
+    // 1. Calcula a distância do centro (0.5, 0.5)
+    vec2 center = vec2(0.5, 0.5);
+    float dist = length(vUv - center);
+    
+    // 2. Cria as ondas radiais (expandindo do centro para fora)
+    float frequency = 60.0; // Quantidade de ondas
+    float speed = 4.0;      // Velocidade de expansão
+    
+    // Usamos seno para a onda e cosseno para simular a inclinação (sombra)
+    float wave = sin(dist * frequency - uTime * speed);
+    float slope = cos(dist * frequency - uTime * speed);
+    
+    // 3. Suaviza as ondas nas bordas para sumirem gradualmente na tela branca
+    float falloff = smoothstep(0.5, 0.05, dist);
+    
+    // 4. Calcula o "Relevo" (a força da sombra)
+    // Multiplicamos pelo uIntensity que vem do React (muda se a IA falar)
+    float bump = wave * slope * falloff * uIntensity;
+    
+    // 5. Cores
+    vec3 surfaceColor = vec3(1.0, 1.0, 1.0); // Fundo totalmente branco
+    // Cor da sombra da onda (cinza muito claro com um subtil tom arroxeado)
+    vec3 shadowColor = vec3(0.85, 0.85, 0.9); 
+    
+    // Mistura o branco e a sombra para criar a ilusão de volume/superfície maleável
+    vec3 finalColor = mix(surfaceColor, shadowColor, clamp(bump * 3.0, 0.0, 1.0));
+    
     gl_FragColor = vec4(finalColor, 1.0);
   }
 `;

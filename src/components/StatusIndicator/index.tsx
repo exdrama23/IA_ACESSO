@@ -31,12 +31,12 @@ export function StatusIndicator() {
   return (
     <div className="fixed top-12 left-1/2 -translate-x-1/2 text-center pointer-events-none z-50">
       <div className={clsx(
-        "text-lg font-medium tracking-[0.2em] uppercase transition-all duration-500 min-h-[40px] flex items-center justify-center",
+        "text-lg font-medium tracking-[0.2em] uppercase transition-all duration-500 min-h-10 flex items-center justify-center",
         colors[status as keyof typeof colors]
       )}>
         {labels[status as keyof typeof labels]}
       </div>
-      <div className="mt-3 w-40 h-[2px] bg-slate-100 rounded-full mx-auto overflow-hidden">
+      <div className="mt-3 w-40 h-0.5 bg-slate-100 rounded-full mx-auto overflow-hidden">
         <div className={clsx(
           "h-full transition-all duration-700 rounded-full",
           status === 'idle' && "w-0 bg-transparent",

@@ -15,10 +15,10 @@ export function StatusIndicator() {
   const { status } = useAppStore();
 
   const labels = {
-    idle: "IA Pronta",
+    idle: "Pronta",
     listening: "Ouvindo...",
     thinking: <AnimatedDots />,
-    speaking: "IA respondendo...",
+    speaking: "Respondendo...",
   };
 
   const colors = {

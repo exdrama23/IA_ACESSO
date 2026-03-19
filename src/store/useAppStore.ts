@@ -1,26 +1,41 @@
 import { create } from "zustand";
+import * as THREE from "three";
 
-export type AppState = "idle" | "listening" | "thinking" | "speaking";
-
-interface AppStore {
-  status: AppState;
-  isRecording: boolean;
-  setStatus: (status: AppState) => void;
-  toggleRecording: () => void;
-  stopRecording: () => void;
+export interface HandLandmark {
+  x: number;
+  y: number;
+  z: number;
 }
 
-export const useAppStore = create<AppStore>((set) => ({
+export type AppStatus = "idle" | "listening" | "thinking" | "speaking" | "error";
+
+interface AppState {
+  status: AppStatus;
+  setStatus: (status: AppStatus) => void;
+  
+  isUserPresent: boolean;
+  isPinching: boolean;
+  handLandmarks: HandLandmark[];
+  cursorPosition: THREE.Vector3; 
+  
+  setHandData: (landmarks: HandLandmark[], isPinching: boolean, isPresent: boolean) => void;
+  setCursorPosition: (pos: THREE.Vector3) => void;
+}
+
+export const useAppStore = create<AppState>((set) => ({
   status: "idle",
-  isRecording: false,
   setStatus: (status) => set({ status }),
-  toggleRecording: () =>
-    set((state) => {
-      const nextIsRecording = !state.isRecording;
-      return {
-        isRecording: nextIsRecording,
-        status: nextIsRecording ? "listening" : "thinking",
-      };
-    }),
-  stopRecording: () => set({ isRecording: false, status: "thinking" }),
+
+  isUserPresent: false,
+  isPinching: false,
+  handLandmarks: [],
+  cursorPosition: new THREE.Vector3(0, 0, 0),
+
+  setHandData: (landmarks, isPinching, isPresent) => set({ 
+    handLandmarks: landmarks, 
+    isPinching, 
+    isUserPresent: isPresent 
+  }),
+  
+  setCursorPosition: (cursorPosition) => set({ cursorPosition }),
 }));

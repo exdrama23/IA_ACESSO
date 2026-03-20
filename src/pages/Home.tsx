@@ -1,18 +1,49 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Avatar3D } from "../components/Avatar3D";
 import { AudioButton } from "../components/AudioButton";
 import { StatusIndicator } from "../components/StatusIndicator";
 import { useChat } from "../hooks/useChat";
 import { useRobustHandTracking } from "../hooks/useRobustHandTracking";
-import { useSpeechPlayer } from "../hooks/useSpeechPlayer";
-import { Play } from "lucide-react";
+// import { useSpeechPlayer } from "../hooks/useSpeechPlayer";
+import { useAppStore } from "../store/useAppStore";
+// import { Play } from "lucide-react";
+
+const GESTURE_TOGGLE_COOLDOWN_MS = 700;
+
+function isHandClosedGesture(landmarks: Array<{ x: number; y: number; z: number }>): boolean {
+  if (landmarks.length < 21) return false;
+
+  const wrist = landmarks[0];
+  const fingertipIndexes = [8, 12, 16, 20];
+  const knuckleIndexes = [5, 9, 13, 17];
+
+  const avgTipToWrist =
+    fingertipIndexes.reduce((sum, idx) => {
+      const p = landmarks[idx];
+      return sum + Math.hypot(p.x - wrist.x, p.y - wrist.y, p.z - wrist.z);
+    }, 0) / fingertipIndexes.length;
+
+  const avgKnuckleToWrist =
+    knuckleIndexes.reduce((sum, idx) => {
+      const p = landmarks[idx];
+      return sum + Math.hypot(p.x - wrist.x, p.y - wrist.y, p.z - wrist.z);
+    }, 0) / knuckleIndexes.length;
+
+  return avgTipToWrist < avgKnuckleToWrist * 0.95;
+}
 
 export default function Home() {
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const lastGestureClosedRef = useRef<boolean | null>(null);
+  const lastToggleAtRef = useRef(0);
+  const isGestureTogglingRef = useRef(false);
 
   const { handleToggleChat } = useChat();
-  const { playTest } = useSpeechPlayer();
+  // const { playTest } = useSpeechPlayer();
+  const handLandmarks = useAppStore((state) => state.handLandmarks);
+  const isUserPresent = useAppStore((state) => state.isUserPresent);
+  const isRecording = useAppStore((state) => state.isRecording);
 
   useRobustHandTracking(videoElement);
 
@@ -52,9 +83,36 @@ export default function Home() {
     };
   }, [videoElement]);
 
-  const handleGoogleTest = () => {
-    playTest("Olá! Eu sou a sua inteligência artificial. Estou pronta para ajudar no evento ACESSO I A. Como posso ser útil hoje?");
-  };
+  useEffect(() => {
+    if (!isUserPresent || handLandmarks.length < 21) {
+      lastGestureClosedRef.current = null;
+      return;
+    }
+
+    const handClosed = isHandClosedGesture(handLandmarks);
+    const gestureChanged = lastGestureClosedRef.current === null || lastGestureClosedRef.current !== handClosed;
+
+    if (!gestureChanged) return;
+
+    lastGestureClosedRef.current = handClosed;
+
+    const shouldRecord = handClosed;
+    if (shouldRecord === isRecording) return;
+
+    const now = Date.now();
+    if (isGestureTogglingRef.current || now - lastToggleAtRef.current < GESTURE_TOGGLE_COOLDOWN_MS) return;
+
+    isGestureTogglingRef.current = true;
+    lastToggleAtRef.current = now;
+
+    void handleToggleChat().finally(() => {
+      isGestureTogglingRef.current = false;
+    });
+  }, [handLandmarks, isUserPresent, isRecording, handleToggleChat]);
+
+  // const handleGoogleTest = () => {
+  //   playTest("Olá! Eu sou a sua inteligência artificial. Estou pronta para ajudar no evento ACESSO I A. Como posso ser útil hoje?");
+  // };
 
   return (
     <main className="relative w-full h-screen overflow-hidden flex flex-col items-center justify-between py-20">
@@ -62,12 +120,12 @@ export default function Home() {
       
       <StatusIndicator />
 
-      <button 
+      {/* <button 
         onClick={handleGoogleTest}
         className="fixed top-24 right-8 z-50 bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-full flex items-center gap-2 text-xs font-bold transition-all"
       >
         <Play className="w-4 h-4" /> TESTAR VOZ GOOGLE
-      </button>
+      </button> */}
 
       <div className="fixed bottom-6 right-6 z-50 w-56 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 shadow-xl backdrop-blur-sm">
         <video

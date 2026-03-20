@@ -14,10 +14,33 @@ export const faq: Record<string, FAQItem[]> = {
         "Quanto custa a internet de fibra?",
         "Qual o valor da internet para casa?",
         "Quais as velocidades de fibra que vocês têm?",
-        "Preços da internet fixa"
+        "Preços da internet fixa",
+        "Qual o valor do serviços da empresa?",
+        "Quanto custa os serviços da Acesso?",
+        "Quais os valores da Acesso?",
+        "Qual o preço da internet Acesso?",
+        "Valores dos planos da empresa",
+        "Tabela de preços da Acesso",
+        "Quanto custa para colocar internet?",
+        "Qual o valor da mensalidade?",
+        "Quanto é a Acesso?",
+        "Preço da Acesso",
+        "Me fala os preços dos planos",
+        "Quais pacotes de internet vocês oferecem?",
+        "Quero saber o valor da instalação e mensalidade",
+        "Quais as opções de megas disponíveis?",
+        "Tabela de valores da internet",
+        "explique",
+        "não entendi",
+        "como assim",
+        "pode explicar melhor?",
+        "repete isso",
+        "explica melhor os planos",
+        "como funcionam esses planos?",
+        "quais as opções de internet?"
       ],
-      answer: "Temos planos de 50 Mega por 79 e 90, 150 Mega por 99 e 90, 300 Mega por 119 e 90 e 600 Mega por 129 e 90 reais mensais.",
-      keywords: ["fibra", "internet", "velocidade", "mega", "preço", "mensalidade"]
+      answer: "Temos planos de internet fibra com 50 Mega por R$ 79,90, 150 Mega por R$ 99,90, 300 Mega por R$ 119,90 e 600 Mega por R$ 129,90 por mês. Quanto maior a velocidade, melhor para casas com mais pessoas, jogos e streaming.",
+      keywords: ["fibra", "internet", "velocidade", "mega", "preço", "mensalidade", "acesso", "valor", "serviço", "explicar", "entendi"]
     },
     {
       category: "Internet Fibra",
@@ -25,9 +48,13 @@ export const faq: Record<string, FAQItem[]> = {
         "Tem plano para professor?",
         "Qual o valor da internet de professor?",
         "Existe desconto para quem é professor?",
-        "Plano Fibra Professor"
+        "Plano Fibra Professor",
+        "Professor paga quanto na internet?",
+        "Sou professor, tenho algum benefício?",
+        "Qual a promoção para educadores?",
+        "Tem internet mais barata para quem dá aula?"
       ],
-      answer: "Sim! Temos o plano Fibra Professor de 200 Mega por um valor exclusivo de 90 reais.",
+      answer: "Sim! Temos o plano Fibra Professor de 200 Mega por um valor exclusivo de R$ 90,00.",
       keywords: ["professor", "educação", "200 mega", "desconto", "especial"]
     },
     {
@@ -35,9 +62,13 @@ export const faq: Record<string, FAQItem[]> = {
       questions: [
         "O que vem nos planos de fibra?",
         "Tem algum benefício extra na internet?",
-        "O que é Skeelo?"
+        "O que é Skeelo?",
+        "Quais os apps inclusos no plano?",
+        "Tem algum brinde ou serviço adicional?",
+        "O que eu ganho assinando a fibra?",
+        "Além da internet, o que mais vem?"
       ],
-      answer: "Todos os nossos planos de fibra já incluem o Skeelo para você aproveitar diversos livros digitais.",
+      answer: "Todos os nossos planos de fibra já incluem o Skeelo para você aproveitar diversos livros digitais sem custo adicional.",
       keywords: ["skeelo", "benefício", "livros", "extra", "bônus"]
     }
   ],
@@ -45,34 +76,74 @@ export const faq: Record<string, FAQItem[]> = {
     {
       category: "Acesso Saúde",
       questions: [
-        "Como funciona o Acesso Saúde?",
         "Quais são os planos de saúde?",
+        "Como funciona o Acesso Saúde?",
+        "Quais as coberturas do Acesso Saúde?",
         "Vocês têm convênio médico?",
         "Valores do Acesso Saúde",
-        "Diferença entre os planos de saúde"
+        "Diferença entre os planos de saúde",
+        "Me explica sobre o plano médico",
+        "Quanto custa o plano de saúde da Acesso?",
+        "É tipo um plano de saúde?",
+        "Como faço para ter assistência médica?"
       ],
-      answer: "A gente oferece planos de Clínica Médica a partir de 29 e 90 e Telemedicina a partir de 19 e 90 reais.",
-      keywords: ["saúde", "médico", "clínica", "telemedicina", "consulta", "família"]
+      answer: "Oferecemos planos de Clínica Médica e Telemedicina. Na Clínica Médica, você tem consultas presenciais com valores acessíveis. Já na Telemedicina, você pode falar com médico online. Os planos começam a partir de R$ 19,90 e variam conforme o tipo de atendimento escolhido.",
+      keywords: ["saúde", "médico", "clínica", "telemedicina", "consulta", "família", "cobertura"]
     },
     {
       category: "Acesso Saúde",
       questions: [
+        "Como funciona o plano família?",
+        "Quantas consultas tem o plano família?",
         "Como é o plano de saúde para família?",
         "Quanto custa a Clínica Médica Família?",
-        "Quantas consultas tem o plano família?"
+        "Plano de saúde familiar valor",
+        "Como funciona o Acesso Saúde para meus filhos?",
+        "Tem desconto para família no plano médico?",
+        "Quantas pessoas podem usar o plano família?"
       ],
-      answer: "O plano Família custa 59 e 90 e oferece consultas ilimitadas para Clínico Geral e Pediatra, além de 5 consultas de especialidades por mês.",
+      answer: "O plano Família custa R$ 59,90 por mês e oferece consultas ilimitadas com Clínico Geral e Pediatra, além de 5 consultas mensais com especialistas para toda a família.",
       keywords: ["família", "especialidades", "ilimitado", "pediatra", "clínico"]
     },
     {
       category: "Acesso Saúde",
       questions: [
-        "O que é a Telemedicina da Acesso?",
+        "Como agendar consulta por vídeo?",
         "Como funciona a consulta online?",
-        "Quanto custa a telemedicina individual?"
+        "O que é a Telemedicina da Acesso?",
+        "Quanto custa a telemedicina individual?",
+        "Posso falar com médico pelo celular?",
+        "Atendimento médico à distância",
+        "Valor da consulta virtual",
+        "Como funciona o agendamento pelo aplicativo?",
+        "Onde encontro a opção de telemedicina no app?",
+        "Dá para marcar consulta online pelo celular?",
+        "Como escolher o horário da consulta no app?",
+        "Preciso ligar para agendar a vídeo consulta?",
+        "Como usar o app Acesso Net Fibra para falar com médico?",
+        "O agendamento de telemedicina é feito por onde?",
+        "Tem como marcar médico sem sair de casa?",
+        "Consigo ajuda para agendar minha consulta por vídeo?"
       ],
-      answer: "A Telemedicina Individual custa 19 e 90 e oferece consultas ilimitadas online com Clínico Geral e Pediatra.",
-      keywords: ["telemedicina", "online", "distância", "consulta digital", "barato"]
+      answer: "Você pode agendar sua consulta por vídeo diretamente pelo aplicativo Acesso Net Fibra. Basta acessar a opção de telemedicina e escolher o melhor horário disponível entre as opções do sistema.",
+      keywords: ["agendar", "vídeo", "aplicativo", "app", "telemedicina", "horário", "celular", "online"]
+    },
+    {
+      category: "Acesso Saúde",
+      questions: [
+        "Quais as vantagens do atendimento médico?",
+        "Tem limite de consultas no Acesso Saúde?",
+        "Quantas vezes posso ir ao clínico geral?",
+        "Como funciona o agendamento de pediatra?",
+        "Posso passar por especialista quantas vezes?",
+        "O atendimento médico é imediato?",
+        "Preciso esperar muito para ser atendido?",
+        "Quais médicos estão disponíveis agora?",
+        "Como faço para marcar uma consulta de especialidade?",
+        "O clínico geral é ilimitado mesmo?"
+      ],
+      answer: "O plano oferece consultas ilimitadas com Clínico Geral e Pediatra, além de 5 consultas por mês com especialistas. O atendimento é realizado após a ligação do cliente.",
+      keywords: ["consultas", "ilimitado", "especialidades", "clínico", "pediatra", "agora", "na hora", "médico"]
     }
   ],
   movel_e_fixo: [
@@ -83,9 +154,14 @@ export const faq: Record<string, FAQItem[]> = {
         "Quanto custa o chip da Acesso?",
         "O que é o Baratinho 15GB?",
         "Tem plano com WhatsApp ilimitado?",
-        "Qual o valor do plano móvel?"
+        "Qual o valor do plano móvel?",
+        "Como funciona o chip da Acesso?",
+        "Quais os planos para celular?",
+        "Tem internet móvel?",
+        "Qual o preço do plano de 15 giga?",
+        "O chip tem sinal bom?"
       ],
-      answer: "Temos o plano Baratinho 15GB por 39 e 90 mensais. Ele vem com chip, 15GB de internet, ligações e WhatsApp ilimitados.",
+      answer: "Temos o plano Baratinho 15GB por R$ 39,90 mensais. Ele inclui chip, internet de 15GB, além de ligações e WhatsApp ilimitados.",
       keywords: ["celular", "móvel", "chip", "15gb", "baratinho", "whatsapp", "ligação"]
     },
     {
@@ -93,9 +169,13 @@ export const faq: Record<string, FAQItem[]> = {
       questions: [
         "Vocês têm telefone fixo?",
         "Qual o valor da telefonia fixa?",
-        "Telefone fixo ilimitado"
+        "Telefone fixo ilimitado",
+        "Quanto custa instalar um fixo?",
+        "Tem plano de voz para casa?",
+        "Como ter um telefone fixo da Acesso?",
+        "Telefone fixo residencial valor"
       ],
-      answer: "Sim, temos telefonia fixa com chamadas ilimitadas por 69 e 90 reais por mês.",
+      answer: "A telefonia fixa possui chamadas ilimitadas pelo valor de R$ 69,90 por mês.",
       keywords: ["fixo", "telefone", "ligação", "ilimitado"]
     }
   ],
@@ -105,34 +185,209 @@ export const faq: Record<string, FAQItem[]> = {
       questions: [
         "Vocês vendem Globoplay?",
         "Quanto custa o Globoplay na Acesso?",
-        "Tem streaming de vídeo?"
+        "Tem streaming de vídeo?",
+        "Como assinar Globo play pela Acesso?",
+        "Posso colocar Globoplay na minha fatura?",
+        "Quais streamings vocês oferecem?",
+        "Valor da mensalidade da Globo"
       ],
-      answer: "Sim, você pode assinar o Globoplay padrão com anúncios por 22 e 90 mensais.",
+      answer: "O Globoplay padrão com anúncios pode ser assinado por R$ 22,90 mensais diretamente na fatura da Acesso.",
       keywords: ["globoplay", "streaming", "filmes", "novelas", "vídeo"]
     }
   ],
-  institucional: [
+  institucional_e_historia: [
     {
       category: "Sobre a Empresa",
       questions: [
-        "Quem é a ACESSO.NET?",
+        "Quem é a Acesso Net?",
         "A Acesso Net é de onde?",
-        "Quanto tempo de mercado vocês têm?"
+        "Quanto tempo de mercado vocês têm?",
+        "A Acesso Net é confiável?",
+        "Onde fica a sede da empresa?",
+        "História da Acesso Net",
+        "É uma empresa grande?",
+        "Quantos clientes vocês têm?",
+        "A empresa é de confiança?",
+        "Como a empresa começou?",
+        "Vale a pena contratar vocês?",
+        "Vocês são confiáveis?",
+        "Desde quando a Acesso existe?"
       ],
-      answer: "A Acesso Net é um provedor de Sergipe com mais de 23 anos de experiência e sede em Estância.",
-      keywords: ["empresa", "quem somos", "história", "estância"]
+      answer: "A Acesso Net é um provedor de internet de Sergipe com mais de 20 anos de experiência. A empresa possui sede em Estância e é reconhecida pela qualidade dos seus serviços.",
+      keywords: ["empresa", "quem somos", "história", "estância", "confiança", "sergipe", "experiência"]
     }
   ],
-  suporte: [
+  suporte_e_atendimento: [
     {
-      category: "Suporte",
+      category: "Suporte e Atendimento",
       questions: [
-        "Qual o telefone do suporte?",
-        "Como falar com vocês?",
-        "WhatsApp da Acesso Net"
+        "Como falar com o suporte?",
+        "Qual o telefone da Acesso Net?",
+        "Vocês atendem 24 horas?",
+        "Qual o número do suporte?",
+        "Como faço para falar com um atendente?",
+        "Vocês têm whatsapp?",
+        "Qual o horário de funcionamento do suporte?",
+        "A internet caiu, para onde eu ligo?",
+        "Como pedir assistência técnica?",
+        "Tô sem internet, o que eu faço?",
+        "Número da central de atendimento",
+        "Como falar com um atendente humano?",
+        "Preciso de suporte agora",
+        "O atendimento é 24h?",
+        "Como reclamar da internet?",
+        "Preciso de um técnico na minha casa",
+        "Quanto tempo demora para o técnico vir?"
       ],
-      answer: "Você pode ligar no 0800 731 1030 ou chamar a gente no WhatsApp. Atendemos 24 horas por dia.",
-      keywords: ["suporte", "contato", "0800", "whatsapp", "ajuda"]
+      answer: "O suporte funciona 24 horas por dia, todos os dias da semana. O atendimento está disponível pelo telefone gratuito 0800 731 1030, pelo WhatsApp.",
+      keywords: ["suporte", "atendimento", "telefone", "whatsapp", "ligar", "ajuda", "0800", "24h", "técnico"]
+    }
+  ],
+  tecnologia_e_velocidade: [
+    {
+      category: "Tecnologia e Velocidade",
+      questions: [
+        "A internet cai quando chove?",
+        "A internet é rápida?",
+        "A internet de vocês é fibra ótica mesmo?",
+        "A internet cai muito?",
+        "A velocidade de envio é boa?",
+        "O que significa velocidade simétrica?",
+        "A internet é boa para jogar online?",
+        "Serve para assistir netflix e youtube sem travar?",
+        "Qual a tecnologia usada na internet?",
+        "A fibra vai até dentro de casa?",
+        "O ping é baixo para jogos?",
+        "Consigo fazer live com essa internet?",
+        "A velocidade de upload é alta?"
+      ],
+      answer: "A internet é 100% fibra óptica, o que garante estabilidade e proteção contra interferências, inclusive em dias de chuva. A velocidade de download e upload é simétrica, proporcionando navegação rápida e sem travamentos.",
+      keywords: ["fibra", "estabilidade", "chuva", "rápida", "download", "upload", "jogar", "netflix"]
+    }
+  ],
+  aplicativo_e_segunda_via: [
+    {
+      category: "Aplicativo e Segunda Via",
+      questions: [
+        "Como pego a segunda via do boleto?",
+        "Posso pagar pelo celular?",
+        "Como ver minha fatura?",
+        "Vocês têm aplicativo?",
+        "Como baixo o app da acesso.net?",
+        "Esqueci de pagar, como pego outro boleto?",
+        "Tem como pagar por pix?",
+        "Como eu acesso a central do assinante?",
+        "Dá para pagar a conta pelo celular?",
+        "Tem app pra cliente?",
+        "Posso resolver tudo pelo celular?",
+        "Onde baixo o boleto?",
+        "Minha fatura não chegou, e agora?",
+        "Como ver o consumo da internet?",
+        "Mudar forma de pagamento pelo app"
+      ],
+      answer: "Pelo aplicativo Acesso Net Fibra é possível retirar a segunda via do boleto, realizar pagamentos com PIX, acompanhar faturas e verificar o consumo de internet.",
+      keywords: ["boleto", "fatura", "pix", "app", "aplicativo", "pagar", "celular", "segunda via"]
+    }
+  ],
+  localizacao_e_cobertura: [
+    {
+      category: "Localização e Cobertura",
+      questions: [
+        "Onde fica a loja de vocês?",
+        "Qual o endereço da acesso.net?",
+        "Vocês atendem em quais cidades?",
+        "Tem internet na praia do abaís?",
+        "Vocês cobrem a praia do saco?",
+        "Tem acesso.net em aracaju?",
+        "A empresa é de estância?",
+        "Vocês atendem litoral?",
+        "Tem cobertura na minha região?",
+        "Onde encontro uma loja física?",
+        "Quais bairros vocês atendem?",
+        "Tem Acesso Net na minha rua?",
+        "Vocês chegam até o interior?"
+      ],
+      answer: "A loja física fica no centro de Estância, em Sergipe. A cobertura abrange diversas cidades da região e do litoral, incluindo Abaís, Praia do Saco, Porto do Mato e Aracaju.",
+      keywords: ["endereço", "loja", "estância", "cidade", "cobertura", "aracaju", "abaís"]
+    }
+  ],
+  internet_empresarial: [
+    {
+      category: "Internet Empresarial",
+      questions: [
+        "Vocês têm internet para empresas?",
+        "Como funciona a internet para cnpj?",
+        "O que é link dedicado?",
+        "A internet empresarial é diferente?",
+        "Tem plano corporativo?",
+        "Minha empresa não pode ficar sem internet, o que vocês oferecem?",
+        "Atendem lojas e prefeituras?",
+        "Tem internet mais estável para empresa?",
+        "Quanto custa o link dedicado?",
+        "Vantagens da internet para CNPJ",
+        "Como contratar internet empresarial?"
+      ],
+      answer: "Existem soluções específicas para empresas com link dedicado, oferecendo uma conexão exclusiva, estável e segura para negócios corporativos.",
+      keywords: ["empresa", "cnpj", "link dedicado", "corporativo", "negócio"]
+    }
+  ],
+  dados_oficiais: [
+    {
+      category: "Dados Oficiais",
+      questions: [
+        "Qual o CNPJ da empresa?",
+        "Me passa o cnpj",
+        "Qual o cnpj da acesso?",
+        "Número do registro da empresa (CNPJ)"
+      ],
+      answer: "O nome oficial da empresa é JF Soluções Informática LTDA. Para informações sobre o CNPJ, é necessário realizar a solicitação diretamente pelo canal de atendimento oficial.",
+      keywords: ["cnpj", "registro", "segurança"]
+    },
+    {
+      category: "Dados Oficiais",
+      questions: [
+        "Qual o nome oficial da empresa?",
+        "Qual a razão social da acesso.net?",
+        "A empresa é legalizada?",
+        "Como a empresa está registrada na receita?",
+        "A acesso net é a jf soluções?",
+        "Qual o nome no contrato?"
+      ],
+      answer: "O nome oficial é JF Soluções Informática LTDA. A empresa está devidamente legalizada e registrada nos órgãos competentes.",
+      keywords: ["razão social", "nome oficial", "jf soluções", "legalizada"]
+    }
+  ],
+  saudacoes: [
+    {
+      category: "Saudações",
+      questions: [
+        "Oi",
+        "Olá",
+        "Bom dia",
+        "Boa tarde",
+        "Boa noite",
+        "Opa",
+        "E aí",
+        "Tudo bem?",
+        "Como vai?",
+        "Oi, tudo bom?"
+      ],
+      answer: "Olá! Tudo bem por aqui. Sou a assistente virtual da Acesso Net e estou aqui para tirar todas as suas dúvidas sobre nossos serviços de internet e saúde.",
+      keywords: ["oi", "ola", "bom dia", "boa tarde", "boa noite", "tudo bem"]
+    },
+    {
+      category: "Saudações",
+      questions: [
+        "Quem é você?",
+        "Como você se chama?",
+        "Qual o seu nome?",
+        "Você é uma IA?",
+        "Com quem eu falo?",
+        "O que você faz?",
+        "Como pode me ajudar?"
+      ],
+      answer: "Eu sou a inteligência artificial da Acesso Net. Posso te passar informações sobre nossos planos de fibra óptica, serviços de saúde, telefonia móvel e suporte técnico.",
+      keywords: ["quem", "nome", "ajudar", "faz", "voce"]
     }
   ],
   fallback: [
@@ -141,133 +396,6 @@ export const faq: Record<string, FAQItem[]> = {
       questions: ["erro_entendimento"],
       answer: "Desculpa, não entendi muito bem. Você pode repetir ou perguntar de outra forma?",
       keywords: ["desculpa", "repetir", "entendi"]
-    }
-  ],
-  tecnologia_e_velocidade: [
-    {
-      category: "tecnologia_e_velocidade",
-      questions: [
-        "a internet de vocês é fibra ótica mesmo?",
-        "a internet é rápida?",
-        "a internet cai muito?",
-        "a velocidade de envio é boa?",
-        "o que significa velocidade simétrica?",
-        "a internet é boa para jogar online?",
-        "serve para assistir netflix e youtube sem travar?",
-        "qual a diferença da internet de vocês para as outras?",
-        "a internet trava quando chove?",
-        "internet de vocês presta?",
-        "é boa mesmo essa internet?"
-      ],
-      answer: "Nossa internet é 100% fibra óptica, então não sofre com interferência nem queda na chuva. A velocidade de download e upload é igual, o que deixa tudo mais rápido para jogar, assistir vídeos e usar no dia a dia sem travar.",
-      keywords: ["fibra", "otica", "velocidade", "rápida", "cair", "travar", "jogar", "netflix", "upload", "download", "chuva", "simétrica"]
-    }
-  ],
-  suporte_e_atendimento: [
-    {
-      category: "suporte_e_atendimento",
-      questions: [
-        "qual o número do suporte?",
-        "como faço para falar com um atendente?",
-        "vocês têm whatsapp?",
-        "qual o horário de funcionamento do suporte?",
-        "a internet caiu, para onde eu ligo?",
-        "o suporte de vocês é bom?",
-        "se der problema no domingo, tem quem conserte?",
-        "qual o telefone da acesso.net?",
-        "como peço ajuda técnica?",
-        "tem suporte agora?",
-        "vocês atendem de madrugada?"
-      ],
-      answer: "Nosso suporte funciona 24 horas por dia, todos os dias da semana. Se precisar, é só ligar gratuitamente para o 0800 731 1030 ou falar com a gente pelo aplicativo.",
-      keywords: ["suporte", "atendimento", "telefone", "whatsapp", "ligar", "ajuda", "0800", "problema", "caiu", "horário", "madrugada", "domingo"]
-    }
-  ],
-  aplicativo_e_segunda_via: [
-    {
-      category: "aplicativo_e_segunda_via",
-      questions: [
-        "como pego a segunda via do boleto?",
-        "onde vejo minha fatura?",
-        "vocês têm aplicativo?",
-        "como baixo o app da acesso.net?",
-        "esqueci de pagar, como pego outro boleto?",
-        "tem como pagar por pix?",
-        "como eu acesso a central do assinante?",
-        "dá para pagar a conta pelo celular?",
-        "tem app pra cliente?",
-        "posso resolver tudo pelo celular?"
-      ],
-      answer: "Você pode resolver tudo pelo celular usando o app 'Acesso Net Fibra'. Por lá dá pra pegar segunda via, pagar com PIX e até pedir suporte de forma rápida.",
-      keywords: ["boleto", "fatura", "pagar", "segunda via", "2 via", "app", "aplicativo", "pix", "central do assinante", "celular"]
-    }
-  ],
-  historia_e_pioneirismo: [
-    {
-      category: "historia_e_pioneirismo",
-      questions: [
-        "quanto tempo a empresa tem?",
-        "a acesso.net é nova na cidade?",
-        "a empresa é de confiança?",
-        "quem é o dono da acesso net?",
-        "vocês têm experiência com internet?",
-        "a internet de vocês é a melhor de sergipe?",
-        "como a empresa começou?",
-        "vale a pena contratar vocês?",
-        "vocês são confiáveis?"
-      ],
-      answer: "A gente já tem mais de 20 anos de experiência levando internet para a região. Somos bem avaliados pelos clientes pela velocidade e pelo suporte rápido.",
-      keywords: ["história", "tempo", "anos", "pioneira", "confiança", "melhor", "experiência", "23 anos", "sergipe"]
-    }
-  ],
-  localizacao_e_cobertura: [
-    {
-      category: "localizacao_e_cobertura",
-      questions: [
-        "onde fica a loja de vocês?",
-        "qual o endereço da acesso.net?",
-        "vocês atendem em quais cidades?",
-        "tem internet na praia do abaís?",
-        "vocês cobrem a praia do saco?",
-        "tem acesso.net em aracaju?",
-        "a empresa é de estância?",
-        "vocês atendem litoral?",
-        "tem cobertura na minha região?"
-      ],
-      answer: "Nossa loja fica no centro de Estância, em Sergipe. Também atendemos várias cidades e o litoral, como Abaís, Praia do Saco, Porto do Mato e até Aracaju.",
-      keywords: ["endereço", "loja", "onde fica", "cidade", "cobertura", "abaís", "saco", "estância", "aracaju", "porto do mato", "rua"]
-    }
-  ],
-  internet_empresarial: [
-    {
-      category: "internet_empresarial",
-      questions: [
-        "vocês têm internet para empresas?",
-        "como funciona a internet para cnpj?",
-        "o que é link dedicado?",
-        "a internet empresarial é diferente?",
-        "tem plano corporativo?",
-        "minha empresa não pode ficar sem internet, o que vocês oferecem?",
-        "atendem lojas e prefeituras?",
-        "tem internet mais estável para empresa?"
-      ],
-      answer: "Sim, temos soluções para empresas com link dedicado. É uma internet exclusiva, mais estável e segura, ideal para negócios que não podem ficar sem conexão.",
-      keywords: ["empresa", "cnpj", "link dedicado", "corporativo", "loja", "negócio", "prefeitura", "empresarial", "segurança"]
-    }
-  ],
-  dados_oficiais: [
-    {
-      category: "dados_oficiais",
-      questions: [
-        "qual é o cnpj da empresa?",
-        "qual a razão social da acesso.net?",
-        "a empresa é legalizada?",
-        "como a empresa está registrada na receita?",
-        "a acesso net é a jf soluções?",
-        "qual o nome oficial da empresa?"
-      ],
-      answer: "Sim, somos uma empresa legalizada. Nosso nome oficial é JF Soluções Informática LTDA e o CNPJ é 07.260.812/0001-15.",
-      keywords: ["cnpj", "razão social", "legalizada", "nome", "jf soluções", "documento", "receita", "fantasia"]
     }
   ]
 };

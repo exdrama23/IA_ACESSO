@@ -11,8 +11,10 @@ export function useAudioRecorder() {
   const recognitionRef = useRef<any>(null);
   const [transcript, setTranscript] = useState("");
   const finalTranscriptRef = useRef(""); 
+  const isManuallyStoppedRef = useRef(false);
 
   const start = useCallback(() => {
+    isManuallyStoppedRef.current = false;
     return new Promise<void>((resolve, reject) => {
       try {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -31,22 +33,37 @@ export function useAudioRecorder() {
         setTranscript("");
 
         recognition.onresult = (event: any) => {
-          let current = "";
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            current += event.results[i][0].transcript;
+          let interimTranscript = "";
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalTranscriptRef.current += event.results[i][0].transcript + " ";
+            } else {
+              interimTranscript += event.results[i][0].transcript;
+            }
           }
-          finalTranscriptRef.current = current;
-          setTranscript(current);
-          console.log("Transcrevendo:", current);
+          const fullText = (finalTranscriptRef.current + interimTranscript).trim();
+          setTranscript(fullText);
+          console.log("Transcrição acumulada:", fullText);
+        };
+
+        recognition.onend = () => {
+          if (!isManuallyStoppedRef.current) {
+            console.log("Reinicio automático do reconhecimento...");
+            try {
+              recognition.start();
+            } catch (e) {
+              console.warn("Erro ao reiniciar reconhecimento:", e);
+            }
+          }
         };
 
         recognition.onerror = (event: any) => {
+          if (event.error === 'no-speech') return; 
           console.error("Erro Reconhecimento:", event.error);
-          if (event.error !== 'no-speech') reject(event.error);
         };
 
         recognition.onstart = () => {
-          console.log("Gravando áudio...");
+          console.log("Microfone ativo.");
           resolve();
         };
 
@@ -65,11 +82,15 @@ export function useAudioRecorder() {
         return;
       }
 
-      recognitionRef.current.onend = () => {
-        console.log("Gravação finalizada. Texto:", finalTranscriptRef.current);
-        resolve(finalTranscriptRef.current);
+      isManuallyStoppedRef.current = true;
+      
+      const onEndFinal = () => {
+        const finalText = finalTranscriptRef.current.trim();
+        console.log("Captura finalizada:", finalText);
+        resolve(finalText);
       };
 
+      recognitionRef.current.onend = onEndFinal;
       recognitionRef.current.stop();
     });
   }, []);

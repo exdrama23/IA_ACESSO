@@ -4,11 +4,46 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+const chatModelCandidates = [
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
+  "gemini-3.1-flash-lite-preview",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash"
+];
+
+let activeChatModelName: string | null = null;
+
+async function resolveWorkingChatModel(): Promise<string | null> {
+  if (activeChatModelName) return activeChatModelName;
+
+  for (const modelName of chatModelCandidates) {
+    try {
+      console.log(`Tentando inicializar modelo de chat: ${modelName}`);
+      const model = genAI.getGenerativeModel({ model: modelName });
+      await model.generateContent("ping");
+      activeChatModelName = modelName;
+      console.log(`Modelo de chat ativo e verificado: ${modelName}`);
+      return activeChatModelName;
+    } catch (error: any) {
+      console.warn(`Falha ao carregar modelo ${modelName}: ${error.message}`);
+    }
+  }
+
+  console.error("ERRO CRÍTICO: Nenhum modelo de chat do Gemini funcionou.");
+  return null;
+}
 
 import { ChatMessage } from "../cache/redis";
 
 export async function askGemini(question: string, context: string = "", history: ChatMessage[] = []): Promise<string> {
+  const modelName = await resolveWorkingChatModel();
+  if (!modelName) {
+    throw new Error("Nenhum modelo disponível para processar a pergunta.");
+  }
+
+  const model = genAI.getGenerativeModel({ model: modelName });
   const historyText = history.map(msg => `${msg.role === "user" ? "Cliente" : "Assistente"}: ${msg.content}`).join("\n");
   
   const prompt = `
@@ -37,7 +72,12 @@ Regras de Resposta para Voz:
     const response = await result.response;
     return response.text().trim();
   } catch (error) {
-    console.error("Erro ao chamar Gemini:", error);
-    return "Desculpe, tive um problema ao processar sua pergunta. Pode repetir?";
+    console.error(`Erro ao chamar Gemini (${modelName}):`, error);
+    // Se falhou com o ativo, reseta para tentar o próximo na próxima vez
+    activeChatModelName = null;
+    throw error;
   }
 }
+
+// Exportando para ser usado na transcrição também
+export { resolveWorkingChatModel };

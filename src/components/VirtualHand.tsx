@@ -8,10 +8,43 @@ const SMOOTHING = 0.25;
 const UPDATE_INTERVAL = 1 / 45; 
 const CURSOR_UPDATE_INTERVAL = 1 / 30;
 const CURSOR_MOVE_EPSILON = 0.003;
-const PORTRAIT_X_GAIN = 0.9;
-const PORTRAIT_Y_GAIN = 1.1;
-const LANDSCAPE_X_GAIN = 1.0;
-const LANDSCAPE_Y_GAIN = 1.0;
+const DEPTH_SCALE = 5;
+const MIN_DEPTH_DAMP = 0.45;
+const CENTERING_STRENGTH = 0.35;
+const MAX_CENTER_SHIFT = 0.12;
+const PORTRAIT_ROTATION_DEG = 90;
+const PORTRAIT_MIRROR_X = false;
+const PORTRAIT_MIRROR_Y = false;
+const PORTRAIT_SCREEN_MIRROR_X = true;
+
+function clamp01(value: number) {
+  return THREE.MathUtils.clamp(value, 0, 1);
+}
+
+function rotateAroundCenter(x: number, y: number, angleDeg: number) {
+  if (angleDeg === 0) return { x, y };
+
+  const radians = (angleDeg * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const dx = x - 0.5;
+  const dy = y - 0.5;
+
+  const rotatedX = dx * cos - dy * sin + 0.5;
+  const rotatedY = dx * sin + dy * cos + 0.5;
+
+  return {
+    x: clamp01(rotatedX),
+    y: clamp01(rotatedY)
+  };
+}
+
+function mapPortraitPoint(x: number, y: number) {
+  const rotated = rotateAroundCenter(x, y, PORTRAIT_ROTATION_DEG);
+  const mirroredX = PORTRAIT_MIRROR_X ? 1 - rotated.x : rotated.x;
+  const mirroredY = PORTRAIT_MIRROR_Y ? 1 - rotated.y : rotated.y;
+  return { x: mirroredX, y: mirroredY };
+}
 
 export function VirtualHand() {
   const meshRef = useRef<THREE.InstancedMesh>(null);
@@ -48,19 +81,38 @@ export function VirtualHand() {
 
     mesh.visible = true;
 
+    const aspectRatio = viewport.width / viewport.height;
+    const depthDamp = THREE.MathUtils.clamp(aspectRatio, MIN_DEPTH_DAMP, 1);
     const isPortrait = viewport.height > viewport.width;
-    const gainX = isPortrait ? PORTRAIT_X_GAIN : LANDSCAPE_X_GAIN;
-    const gainY = isPortrait ? PORTRAIT_Y_GAIN : LANDSCAPE_Y_GAIN;
+
     const maxX = viewport.width * 0.49;
     const maxY = viewport.height * 0.49;
+    const handCenterX =
+      handLandmarks.reduce((sum, landmark) => {
+        const normalized = isPortrait
+          ? mapPortraitPoint(landmark.x, landmark.y)
+          : { x: landmark.x, y: landmark.y };
+        return sum + normalized.x;
+      }, 0) / handLandmarks.length;
+    const centerShift = THREE.MathUtils.clamp(
+      (handCenterX - 0.5) * CENTERING_STRENGTH,
+      -MAX_CENTER_SHIFT,
+      MAX_CENTER_SHIFT
+    );
 
     handLandmarks.forEach((landmark, i) => {
+      const normalized = isPortrait
+        ? mapPortraitPoint(landmark.x, landmark.y)
+        : { x: landmark.x, y: landmark.y };
+      const normalizedX = clamp01(normalized.x + centerShift);
+      const normalizedY = normalized.y;
 
-      const mappedX = (landmark.x - 0.5) * -viewport.width * gainX;
-      const mappedY = (landmark.y - 0.5) * -viewport.height * gainY;
+      const xDirection = isPortrait && PORTRAIT_SCREEN_MIRROR_X ? 1 : -1;
+      const mappedX = (normalizedX - 0.5) * xDirection * viewport.width;
+      const mappedY = (normalizedY - 0.5) * -viewport.height;
       const targetX = THREE.MathUtils.clamp(mappedX, -maxX, maxX);
       const targetY = THREE.MathUtils.clamp(mappedY, -maxY, maxY);
-      const targetZ = landmark.z * -5;
+      const targetZ = landmark.z * -DEPTH_SCALE * depthDamp;
 
  
       const currentPos = previousPositions.current[i];

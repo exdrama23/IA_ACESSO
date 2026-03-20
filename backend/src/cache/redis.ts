@@ -8,6 +8,8 @@ export const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
+export const THREE_DAYS_SECONDS = 60 * 60 * 24 * 3;
+
 
 export function gerarChave(pergunta: string, tipo: 'text' | 'audio' = 'text'): string {
   const crypto = require("crypto");
@@ -48,7 +50,7 @@ export async function getCache(key: string) {
   }
 }
 
-export async function setCache(key: string, value: any, ttlSeconds: number = 3600) {
+export async function setCache(key: string, value: any, ttlSeconds: number = THREE_DAYS_SECONDS) {
   try {
     await redis.set(key, value, { ex: ttlSeconds });
   } catch (err) {
@@ -81,7 +83,7 @@ export async function addConversationHistory(sessionId: string, userMsg: string,
       history = history.slice(-120);
     }
     
-    await redis.set(`history:${sessionId}`, history, { ex: 60 * 60 * 24 * 30 });
+    await redis.set(`history:${sessionId}`, history, { ex: THREE_DAYS_SECONDS });
   } catch (err) {
     console.error("Erro ao salvar histórico:", err);
   }

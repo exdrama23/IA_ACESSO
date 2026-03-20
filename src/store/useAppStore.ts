@@ -12,6 +12,9 @@ export type AppStatus = "idle" | "listening" | "thinking" | "speaking" | "error"
 interface AppState {
   status: AppStatus;
   setStatus: (status: AppStatus) => void;
+
+  isRecording: boolean;
+  toggleRecording: () => void;
   
   isUserPresent: boolean;
   isPinching: boolean;
@@ -25,6 +28,9 @@ interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   status: "idle",
   setStatus: (status) => set({ status }),
+
+  isRecording: false,
+  toggleRecording: () => set((state) => ({ isRecording: !state.isRecording })),
 
   isUserPresent: false,
   isPinching: false,

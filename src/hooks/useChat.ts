@@ -12,7 +12,14 @@ export function useChat() {
   const handleToggleChat = useCallback(async () => {
     if (!isRecording) {
       toggleRecording();
-      await start();
+      try {
+        await start();
+        setStatus("listening");
+      } catch (error) {
+        console.error("Falha ao iniciar gravacao:", error);
+        toggleRecording();
+        setStatus("idle");
+      }
     } else {
       toggleRecording();
       setStatus("thinking");

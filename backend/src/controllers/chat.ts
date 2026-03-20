@@ -13,12 +13,12 @@ import { askGemini, resolveWorkingChatModel } from "../ai/gemini";
 import { gerarAudio } from "../ai/tts";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
+import path from "path";
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-// TRANSCRIÇÃO REAL USANDO GEMINI COM FALLBACK DE MODELO
 async function transcribeAudio(audioBuffer: Buffer, mimeType: string): Promise<string> {
   try {
     const modelName = await resolveWorkingChatModel();

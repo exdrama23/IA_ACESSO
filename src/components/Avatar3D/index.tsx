@@ -139,6 +139,7 @@ function IAVisual() {
       uIntensity: { value: 0.15 },
       uState: { value: 0 },
       uMouse: { value: new THREE.Vector3(0, 0, 0) },
+      uIsUserPresent: { value: 0.0 },
     }),
     []
   );
@@ -148,6 +149,7 @@ function IAVisual() {
 
     const time = state.clock.getElapsedTime();
     material.current.uniforms.uTime.value = time;
+    material.current.uniforms.uIsUserPresent.value = isUserPresent ? 1.0 : 0.0;
 
     let targetIntensity = 0.15;
     let targetState = 0;
@@ -174,7 +176,7 @@ function IAVisual() {
       targetPoint.current.z = 1.0;
     }
 
-    currentPoint.current.lerp(targetPoint.current, 0.1);
+    currentPoint.current.lerp(targetPoint.current, 0.25); // Aumentado de 0.1 para 0.25
     material.current.uniforms.uMouse.value.copy(currentPoint.current);
 
     const swayX = Math.sin(time * 0.5) * 0.05;
@@ -183,8 +185,8 @@ function IAVisual() {
     const targetRotationX = (-(currentPoint.current.y / viewport.height) * 2) + swayX;
     const targetRotationY = ((currentPoint.current.x / viewport.width) * 2) + swayY;
 
-    mesh.current.rotation.x = THREE.MathUtils.lerp(mesh.current.rotation.x, targetRotationX, 0.1);
-    mesh.current.rotation.y = THREE.MathUtils.lerp(mesh.current.rotation.y, targetRotationY, 0.1);
+    mesh.current.rotation.x = THREE.MathUtils.lerp(mesh.current.rotation.x, targetRotationX, 0.25); // Aumentado de 0.1 para 0.25
+    mesh.current.rotation.y = THREE.MathUtils.lerp(mesh.current.rotation.y, targetRotationY, 0.25); // Aumentado de 0.1 para 0.25
     
     mesh.current.position.y = Math.sin(time * 0.7) * 0.02;
     
@@ -194,7 +196,7 @@ function IAVisual() {
 
   return (
     <mesh ref={mesh} castShadow>
-      <sphereGeometry args={[0.9, 128, 128]} />
+      <sphereGeometry args={[0.9, 64, 64]} />
       <shaderMaterial
         ref={material}
         vertexShader={vertexShader}
@@ -211,8 +213,12 @@ export function Avatar3D() {
   return (
     <div className="absolute inset-0 w-full h-full -z-10 bg-white">
       <Canvas 
-        shadows 
+        shadows={{ type: THREE.PCFShadowMap }}
         camera={{ position: [0, 0, 5], fov: 35 }}
+        gl={{ antialias: true }}
+        onCreated={({ gl }) => {
+
+        }}
       >
         <color attach="background" args={['#ffffff']} />
 

@@ -4,10 +4,10 @@ import * as THREE from "three";
 import { useAppStore } from "../store/useAppStore";
 
 const BASE_SIZE = 0.007;
-const SMOOTHING = 0.25;
-const UPDATE_INTERVAL = 1 / 45; 
-const CURSOR_UPDATE_INTERVAL = 1 / 30;
-const CURSOR_MOVE_EPSILON = 0.003;
+const SMOOTHING = 0.6; 
+const UPDATE_INTERVAL = 0; 
+const CURSOR_UPDATE_INTERVAL = 0; 
+const CURSOR_MOVE_EPSILON = 0.001; 
 const DEPTH_SCALE = 5;
 const MIN_DEPTH_DAMP = 0.45;
 const CENTERING_STRENGTH = 0.35;

@@ -1,6 +1,7 @@
 export const vertexShader = `
   varying vec3 vNormal;
   varying vec3 vPosition;
+  varying vec3 vWorldPosition;
   varying vec2 vUv;
   uniform float uTime;
   uniform float uIntensity;
@@ -52,10 +53,13 @@ export const vertexShader = `
   }
 
   void main() {
-    vNormal = normal;
+    vNormal = normalize(normalMatrix * normal);
     vUv = uv;
     vPosition = position;
-    // Ajustado para que o ruído se mova INDEPENDENTE da rotação da malha, usando apenas o tempo
+    
+    vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+    vWorldPosition = worldPosition.xyz;
+
     float noise = snoise(vec3(position * 2.5 + uTime * 0.8));
     vec3 newPosition = position + normal * noise * uIntensity;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
@@ -65,9 +69,12 @@ export const vertexShader = `
 export const fragmentShader = `
   varying vec3 vNormal;
   varying vec3 vPosition;
+  varying vec3 vWorldPosition;
   varying vec2 vUv;
   uniform float uTime;
   uniform float uState; 
+  uniform vec3 uMouse;
+  uniform float uIsUserPresent;
 
   void main() {
     float fresnel = pow(1.2 - dot(vNormal, vec3(0, 0, 1.0)), 2.5);
@@ -87,8 +94,17 @@ export const fragmentShader = `
       glowColor = pinkRed;
     }
 
-    vec3 finalColor = mix(baseColor, glowColor, fresnel * 0.6);
-    gl_FragColor = vec4(finalColor, 1.0);
+    // Efeito de proximidade otimizado (usando dot em vez de distance)
+    vec3 delta = vWorldPosition - uMouse;
+    float distSq = dot(delta, delta);
+    float touchRadiusSq = 0.64; // (0.8 * 0.8)
+    float touchEffect = (1.0 - smoothstep(0.0, touchRadiusSq, distSq)) * uIsUserPresent;
+    
+    vec3 touchColor = vec3(0.0, 1.0, 1.0);
+    vec3 mixedColor = mix(baseColor, glowColor, fresnel * 0.6);
+    vec3 finalColor = mix(mixedColor, touchColor, touchEffect * 0.8);
+    
+    gl_FragColor = vec4(finalColor + touchColor * touchEffect * 0.2, 1.0);
   }
 `;
 
@@ -103,23 +119,23 @@ export const epicenterVertexShader = `
 export const epicenterFragmentShader = `
   varying vec2 vUv;
   uniform float uTime;
-  uniform float uIntensity; // Força das ondas
+  uniform float uIntensity;
 
   void main() {
     vec2 center = vec2(0.5, 0.5);
-    float dist = length(vUv - center);
+    float distSq = dot(vUv - center, vUv - center);
     
     float frequency = 60.0;
     float speed = 4.0;     
     
-    float wave = sin(dist * frequency - uTime * speed);
-    float slope = cos(dist * frequency - uTime * speed);
+    float wave = sin(sqrt(distSq) * frequency - uTime * speed);
+    float slope = cos(sqrt(distSq) * frequency - uTime * speed);
     
-    float falloff = smoothstep(0.5, 0.05, dist);
+    float falloff = smoothstep(0.25, 0.0025, distSq); // Ajustado para distSq
     
     float bump = wave * slope * falloff * uIntensity;
     
-    vec3 surfaceColor = vec3(1.0, 1.0, 1.0); // Fundo totalmente branco
+    vec3 surfaceColor = vec3(1.0, 1.0, 1.0);
     vec3 shadowColor = vec3(0.85, 0.85, 0.9); 
     
     vec3 finalColor = mix(surfaceColor, shadowColor, clamp(bump * 3.0, 0.0, 1.0));

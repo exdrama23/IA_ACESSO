@@ -1,8 +1,31 @@
 import axios from "axios";
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
 
 export async function gerarAudio(texto: string): Promise<string> {
   const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || "";
   const VOICE_ID = process.env.ELEVENLABS_VOICE_ID || "JBFqnCBsd6RMkjVDRZzb"; 
+
+  const projectRoot = path.resolve(__dirname, "../../..");
+  const publicAudioPath = path.join(projectRoot, "public", "audio");
+  
+  // Cria pasta se não existir
+  if (!fs.existsSync(publicAudioPath)) {
+    fs.mkdirSync(publicAudioPath, { recursive: true });
+  }
+
+  // Gera nome de arquivo baseado no hash do texto
+  const textHash = crypto.createHash('md5').update(texto).digest('hex');
+  const audioFile = `audio_${textHash}.mp3`;
+  const audioPath = path.join(publicAudioPath, audioFile);
+  const audioUrl = `/audio/${audioFile}`;
+
+  // Se arquivo já existe, retorna a URL direto
+  if (fs.existsSync(audioPath)) {
+    console.log("[CACHE_ARQUIVO] Áudio já existe no disco");
+    return audioUrl;
+  }
 
   // 1. Tenta ElevenLabs
   if (ELEVENLABS_API_KEY) {
@@ -24,9 +47,9 @@ export async function gerarAudio(texto: string): Promise<string> {
         responseType: 'arraybuffer' 
       });
 
-      const base64Audio = Buffer.from(response.data).toString('base64');
-      console.log("[ELEVENLABS] Áudio gerado com sucesso (Base64)");
-      return `data:audio/mpeg;base64,${base64Audio}`;
+      fs.writeFileSync(audioPath, response.data);
+      console.log("[ELEVENLABS] Áudio gerado e salvo com sucesso");
+      return audioUrl;
       
     } catch (error: any) {
       console.error("[ELEVENLABS] Erro na API, tentando fallback do Google...");
@@ -42,9 +65,9 @@ export async function gerarAudio(texto: string): Promise<string> {
       headers: { 'User-Agent': 'Mozilla/5.0' }
     });
     
-    const base64Audio = Buffer.from(response.data).toString('base64');
-    console.log("[TTS] Áudio gerado via Google Fallback (Base64)");
-    return `data:audio/mpeg;base64,${base64Audio}`;
+    fs.writeFileSync(audioPath, response.data);
+    console.log("[GOOGLE_TTS] Áudio gerado via Google e salvo no disco");
+    return audioUrl;
   } catch (e: any) {
     console.error(`[TTS] Erro fatal no fallback:`, e.message);
     return "";

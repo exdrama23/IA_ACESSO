@@ -39,37 +39,42 @@ export function useChat() {
 
         console.log("Resposta da IA:", response.text, `(Fonte: ${response.source})`);
 
-        if (response.audioUrl) {
-          console.log("Iniciando áudio (Base64 ou URL)...");
+        if (response.audioUrl && response.audioUrl.startsWith('data:audio')) {
+          console.log("🎵 Iniciando reprodução de áudio do backend...");
           setStatus("speaking");
           
-          // Se for Base64 (Data URI), usa direto. Senão, adiciona o host.
-          const fullUrl = response.audioUrl.startsWith('data:') || response.audioUrl.startsWith('http')
-            ? response.audioUrl 
-            : `http://localhost:3001${response.audioUrl}`;
-
-          const audio = new Audio(fullUrl);
-          
-          audio.onplay = () => console.log("Áudio iniciado.");
-          audio.onended = () => {
-            console.log("Áudio finalizado.");
-            setStatus("idle");
-          };
-          
-          audio.onerror = async (e) => {
-            console.error("Erro ao tocar áudio do backend, usando fallback local:", e);
-            await playTest(response.text);
-          };
-
           try {
+            // O navegador sabe tocar Data URIs de Base64 nativamente!
+            const audio = new Audio(response.audioUrl);
+            
+            audio.onplay = () => console.log("✓ Áudio iniciado.");
+            
+            audio.onended = () => {
+              console.log("✓ Áudio finalizado.");
+              setStatus("idle");
+            };
+            
+            audio.onerror = async (e) => {
+              console.error("❌ Erro ao tocar áudio (Data URI inválido), usando fallback local:", e);
+              await playTest(response.text);
+              setStatus("idle");
+            };
+
             await audio.play();
+            
           } catch (playError) {
-            console.error("Erro no play() do áudio:", playError);
+            console.error("❌ Erro no play() do áudio Data URI:", playError);
             await playTest(response.text);
+            setStatus("idle");
           }
-        } else {
-          console.log("Sem áudio do backend, usando síntese local.");
+        } else if (response.audioUrl) {
+          console.warn("⚠️ Backend devolveu audioUrl mas não é Data URI válido:", response.audioUrl.substring(0, 50));
           await playTest(response.text);
+          setStatus("idle");
+        } else {
+          console.log("ℹ️ Sem áudio do backend, usando síntese local...");
+          await playTest(response.text);
+          setStatus("idle");
         }
 
       } catch (error) {

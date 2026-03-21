@@ -10,7 +10,7 @@ import {
 } from "../cache/redis";
 import { searchFAQ } from "../ai/embeddings";
 import { askGemini, resolveWorkingChatModel } from "../ai/gemini";
-import { gerarAudio } from "../ai/tts";
+import { gerarAudio } from "../ai/audioService";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 import path from "path";
@@ -119,19 +119,21 @@ export async function chat(req: Request, res: Response) {
 
     await addConversationHistory(sessionId, question, respostaText);
 
-    const audioCacheKey = gerarChave(respostaText, "audio");
-    let audioUrl = await getCache(audioCacheKey) as string;
-
-    if (!audioUrl) {
-      audioUrl = await gerarAudio(respostaText);
-      if (audioUrl) {
-        await setCache(audioCacheKey, audioUrl, THREE_DAYS_SECONDS);
-      }
-    } else {
-      console.log("[CACHE] Áudio recuperado do cache");
+    // Gera áudio com TTS (com caching automático em Redis via audioService)
+    let audioResponse = { audioUrl: "", cached: false };
+    try {
+      audioResponse = await gerarAudio(respostaText);
+      console.log(`[AUDIO] ${audioResponse.cached ? 'Cache Hit' : 'Novo'}: ${respostaText.substring(0, 50)}...`);
+    } catch (audioError) {
+      console.error("[AUDIO] Erro ao gerar áudio:", audioError);
+      // Continua mesmo sem áudio, frontend usará fallback local
     }
 
-    res.json({ text: respostaText, audioUrl, source });
+    res.json({ 
+      text: respostaText, 
+      audioUrl: audioResponse.audioUrl, 
+      source 
+    });
 
   } catch (error) {
     console.error("Erro Pipeline:", error);

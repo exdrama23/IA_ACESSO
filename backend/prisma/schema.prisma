@@ -1,0 +1,182 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============ MODELO: User (Admin/Usuários) ============
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // Será hash bcrypt
+  name      String?
+  role      String   @default("user") // "admin" | "user"
+  
+  // Password Reset
+  resetCode    String?
+  resetExpires DateTime?
+
+  // Relacionamentos
+  loginAttempts LoginAttempt[]
+  auditLogs     AuditLog[]
+  chatHistories ChatHistory[]
+  apiCalls      ApiCall[]
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt 
+
+  @@index([email])
+  @@index([role])
+}
+
+// ============ MODELO: LoginAttempt (Segurança) ============
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  userId    String?  // null se tentativa falhou
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  email     String   // Email tentado (mesmo que falhe)
+  success   Boolean  @default(false)
+  ipAddress String?
+  userAgent String?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([email])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ============ MODELO: AuditLog (Rastreamento de Ações) ============
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  action    String   // "login", "config_update", "chat", "logout"
+  resource  String?  // "config", "/api/chat", etc
+  changes   Json?    // O que mudou (ex: { strategy: "tfidf" -> "gemini" })
+  status    String   @default("success") // "success" | "failed" | "warning"
+  errorMsg  String?
+  
+  ipAddress String?
+  userAgent String?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([resource])
+}
+
+// ============ MODELO: ChatHistory (Histórico de Conversa) ============
+model ChatHistory {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  sessionId String   // Agrupa conversas por sessão
+  question  String   @db.Text // Pergunta do usuário
+  answer    String   @db.Text // Resposta da IA
+  
+  // Metadata da resposta
+  source    String   // "FAQ" | "CACHE_SEMANTICO" | "GEMINI" | "FALLBACK"
+  confidence Float  @default(0.0) // Score de confiança 0-1
+  audioUrl  String?  // URL do Cloudinary
+  
+  // Embeddings para comparação (JSON)
+  embedding String? @db.Text // JSON string do vetor semântico
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt 
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([createdAt])
+  @@index([source])
+}
+
+// ============ MODELO: ApiCall (Rastreamento de API) ============
+model ApiCall {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  endpoint  String   // "/api/chat", "/config", etc
+  method    String   // "GET", "POST", etc
+  status    Int      // 200, 400, 500, etc
+  
+  // Performance
+  duration  Int      // milliseconds
+  
+  // Metadata
+  requestBody  Json?     // Dados enviados (sem senhas)
+  responseBody Json?     // Resposta (sem dados sensíveis)
+  error        String?   // Mensagem de erro, se houver
+  
+  ipAddress String?
+  userAgent String?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([endpoint])
+  @@index([method])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============ MODELO: SystemConfig (Armazenar Configs no DB) ============
+model SystemConfig {
+  id        String   @id @default("current")
+  
+  // Estratégia de embeddings
+  embeddingStrategy String @default("tfidf") // "tfidf" | "gemini" | "hybrid"
+  tfidfThreshold    Float  @default(0.75)
+  geminiThreshold   Float  @default(0.85)
+  
+  // TTS
+  ttsModel  String   @default("elevenlabs")
+  
+  // Storage
+  audioStorage String @default("cloudinary")
+  audioTtl  Int      @default(259200) // 3 dias em segundos
+  
+  // Limites
+  maxAudioPerSession Int @default(100)
+  maxRequestSizeMb   Int @default(10)
+  
+  // Metadata
+  modifiedBy String?
+  version    Int      @default(1)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============ MODELO: ApiUsage (Rastreamento de Custos) ============
+model ApiUsage {
+  id        String   @id @default(cuid())
+  
+  service   String   // "gemini" | "elevenlabs" | "cloudinary"
+  tokens    Int?     // Para Gemini
+  characters Int?    // Para ElevenLabs
+  requests  Int      @default(1) // Número de requisições
+  
+  // Custo estimado
+  estimatedCost Float @default(0.0)
+  
+  createdAt DateTime @default(now())
+  date      DateTime @default(now()) // Data agregada
+  
+  @@index([service])
+  @@index([date])
+  @@unique([service, date])
+}

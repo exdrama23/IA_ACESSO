@@ -42,8 +42,7 @@ export function useChat() {
         if (response.audioUrl) {
           console.log("Iniciando áudio (Base64 ou URL)...");
           setStatus("speaking");
-          
-          // Se for Base64 (Data URI), usa direto. Senão, adiciona o host.
+
           const fullUrl = response.audioUrl.startsWith('data:') || response.audioUrl.startsWith('http')
             ? response.audioUrl 
             : `http://localhost:3001${response.audioUrl}`;

@@ -1,7 +1,6 @@
 import stringSimilarity from "string-similarity";
 import { FAQItem } from "../data/faq";
 
-
 const SINONIMOS: Record<string, string[]> = {
   preco: ["valor", "custo", "mensalidade", "quanto e", "pagar", "tabela", "fatura", "conta"],
   melhor: ["boa", "recomendada", "confiavel", "rapida", "estavel", "vantagem", "diferencial"],
@@ -38,7 +37,6 @@ function dividirPergunta(pergunta: string): string[] {
   const partes = pergunta.split(/,| e | tambem | alem disso | alem de | mas /gi);
   return partes.map(p => p.trim()).filter(p => p.length > 3);
 }
-
 
 function calcularRank(input: string, item: FAQItem): number {
   const inputNorm = normalizar(input);

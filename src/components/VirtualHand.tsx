@@ -114,12 +114,10 @@ export function VirtualHand() {
       const targetY = THREE.MathUtils.clamp(mappedY, -maxY, maxY);
       const targetZ = landmark.z * -DEPTH_SCALE * depthDamp;
 
- 
       const currentPos = previousPositions.current[i];
       targetPosition.set(targetX, targetY, targetZ);
       currentPos.lerp(targetPosition, SMOOTHING);
       dummy.position.copy(currentPos);
-
 
       const distanceToCamera = dummy.position.distanceTo(cameraWorldPosition);
       let fixedScale = distanceToCamera * BASE_SIZE;

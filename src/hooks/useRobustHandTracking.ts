@@ -23,7 +23,7 @@ const PINCH_PRESS_THRESHOLD = 0.04;
 const PINCH_RELEASE_THRESHOLD = 0.06;
 const TIMEOUT_DESISTENCIA = 1200;
 const CONFIDENCE = 0.45;
-const INFERENCE_INTERVAL_MS = 33; // ~30 FPS de inferencia
+const INFERENCE_INTERVAL_MS = 33; 
 const MISSED_FRAMES_TO_ABSENT = 10;
 
 export function useRobustHandTracking(videoElement: HTMLVideoElement | null) {
@@ -57,7 +57,8 @@ export function useRobustHandTracking(videoElement: HTMLVideoElement | null) {
       try {
         const mediapipeModuleUrl = "/node_modules/@mediapipe/tasks-vision/vision_bundle.mjs";
         const visionModule = (await import(
-          /* @vite-ignore */ mediapipeModuleUrl
+           
+           mediapipeModuleUrl
         )) as VisionModule;
         const { FilesetResolver, HandLandmarker } = visionModule;
 

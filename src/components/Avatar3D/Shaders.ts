@@ -94,10 +94,9 @@ export const fragmentShader = `
       glowColor = pinkRed;
     }
 
-    // Efeito de proximidade otimizado (usando dot em vez de distance)
     vec3 delta = vWorldPosition - uMouse;
     float distSq = dot(delta, delta);
-    float touchRadiusSq = 0.64; // (0.8 * 0.8)
+    float touchRadiusSq = 0.64; 
     float touchEffect = (1.0 - smoothstep(0.0, touchRadiusSq, distSq)) * uIsUserPresent;
     
     vec3 touchColor = vec3(0.0, 1.0, 1.0);
@@ -131,7 +130,7 @@ export const epicenterFragmentShader = `
     float wave = sin(sqrt(distSq) * frequency - uTime * speed);
     float slope = cos(sqrt(distSq) * frequency - uTime * speed);
     
-    float falloff = smoothstep(0.25, 0.0025, distSq); // Ajustado para distSq
+    float falloff = smoothstep(0.25, 0.0025, distSq); 
     
     float bump = wave * slope * falloff * uIntensity;
     

@@ -4,7 +4,6 @@ export async function gerarAudio(texto: string): Promise<string> {
   const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || "";
   const VOICE_ID = process.env.ELEVENLABS_VOICE_ID || "JBFqnCBsd6RMkjVDRZzb"; 
 
-  // 1. Tenta ElevenLabs
   if (ELEVENLABS_API_KEY) {
     const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`;
     try {

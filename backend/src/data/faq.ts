@@ -374,7 +374,7 @@ export const faq: Record<string, FAQItem[]> = {
       ],
       answer: "Olá! Tudo bem por aqui. Sou a assistente virtual da Acesso Net e estou aqui para tirar todas as suas dúvidas sobre nossos serviços de internet e saúde.",
       keywords: ["oi", "ola", "bom dia", "boa tarde", "boa noite", "tudo bem"]
-    },
+    }, 
     {
       category: "Saudações",
       questions: [

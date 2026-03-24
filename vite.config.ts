@@ -5,13 +5,13 @@ import tailwindcss from '@tailwindcss/vite'
 // Plugin para ignorar erros de Source Maps do MediaPipe
 const ignoreSourceMaps = {
   name: 'ignore-sourcemaps',
-  resolveId(id) {
+  resolveId(id: string) {
     if (id.includes('vision_bundle_mjs.js.map')) {
       return id;
     }
     return null;
   },
-  load(id) {
+  load(id: string) {
     if (id.includes('vision_bundle_mjs.js.map')) {
       return '{"version":3,"file":"vision_bundle.mjs","sources":[],"names":[],"mappings":""}';
     }

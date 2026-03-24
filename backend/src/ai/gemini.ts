@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { trackAICall } from "../services/costTracker";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -73,7 +74,12 @@ REGRAS:
   try {
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    return response.text().trim();
+    const text = response.text().trim();
+
+    const estimatedTokens = Math.ceil((prompt.length + text.length) / 4);
+    await trackAICall('gemini', { tokens: estimatedTokens, type: 'chat_generation' });
+
+    return text;
   } catch (error: any) {
     if (error.status === 429) {
       console.error(`[GEMINI] Cota excedida no modelo ${modelName}. Resetando para trocar de modelo.`);

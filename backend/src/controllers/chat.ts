@@ -12,6 +12,10 @@ import { searchFAQ } from "../ai/embeddings";
 import { askGemini, resolveWorkingChatModel } from "../ai/gemini";
 import { gerarAudio } from "../ai/tts";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateTFIDFVector } from "../ai/semantic";
+import { getConfig } from "../config/settings";
+import { prisma } from "../lib/prisma";
+import { getCachedAudioUrl, cacheAudioUrl, generateResponseHash } from "../utils/audioCache";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -41,19 +45,34 @@ async function transcribeAudio(audioBuffer: Buffer, mimeType: string): Promise<s
   }
 }
 
-export async function chat(req: Request, res: Response) {
+import { validateChatInput } from "../utils/validators";
+import { AppError } from "../middleware/errorHandler";
+import { trackAICall } from "../services/costTracker";
+
+export async function chat(req: Request, res: Response, next: any) {
   try {
-    let question = req.body.text;
+    console.log('[CHAT] Iniciando processamento...');
+    const { text, sessionId: bodySessionId } = req.body;
     const audioFile = req.file;
-    const sessionId = req.headers["x-session-id"] as string || "default_session"; 
+    const sessionId = (req.headers["x-session-id"] as string) || bodySessionId || "default_session"; 
+
+    console.log('[CHAT] Input:', { text: text?.substring(0, 50), audioFile: !!audioFile, sessionId });
+    
+    const validationErrors = validateChatInput({ text, audio: audioFile, sessionId });
+    if (validationErrors.length > 0) {
+      throw new AppError(400, "Dados inválidos", validationErrors);
+    }
+
+    let question = text;
 
     if (!question && audioFile) {
       console.log("Transcrevendo áudio via Gemini (Fallback)...");
       question = await transcribeAudio(audioFile.buffer, audioFile.mimetype);
+
+      await trackAICall('gemini', { tokens: 100, type: 'stt_transcription' });
     }
 
     if (!question) {
-      console.log("Nenhuma pergunta detectada (vazio).");
       return res.json({ text: "Não consegui entender. Pode repetir?", audioUrl: "" });
     }
 
@@ -119,22 +138,72 @@ export async function chat(req: Request, res: Response) {
 
     await addConversationHistory(sessionId, question, respostaText);
 
-    const audioCacheKey = gerarChave(respostaText, "audio");
-    let audioUrl = await getCache(audioCacheKey) as string;
+    const config = await getConfig();
+    console.log(`[AUDIO] Processando cache de áudio...`);
 
-    if (!audioUrl) {
-      audioUrl = await gerarAudio(respostaText);
-      if (audioUrl) {
-        await setCache(audioCacheKey, audioUrl, THREE_DAYS_SECONDS);
-      }
+    const responseHash = generateResponseHash(respostaText);
+    console.log(`[AUDIO] Hash da resposta: ${responseHash}`);
+
+    let audioUrl = "";
+    let confidence = "100%";
+
+    const cachedAudioUrl = await getCachedAudioUrl(responseHash);
+    
+    if (cachedAudioUrl) {
+      console.log(`[AUDIO]  Reutilizando áudio da cache (sem gerar novo)`);
+      audioUrl = cachedAudioUrl;
+      source = "CACHE_AUDIO_HASH";
     } else {
-      console.log("[CACHE] Áudio recuperado do cache");
+      console.log(`[AUDIO] Gerando novo áudio com TTS...`);
+      const audioUrl_generated = await gerarAudio(respostaText);
+
+      audioUrl = audioUrl_generated;
+      
+      await cacheAudioUrl(responseHash, audioUrl, config.audio.ttl_seconds);
+      console.log(`[AUDIO] Novo áudio gerado, uploadado e cacheado`);
     }
 
-    res.json({ text: respostaText, audioUrl, source });
+    try {
+      await prisma.chatHistory.create({
+        data: {
+          userId: (req as any).user?.id || null,
+          sessionId,
+          question,
+          answer: respostaText,
+          source,
+          confidence: parseFloat(confidence),
+          audioUrl,
+          embedding: JSON.stringify(generateTFIDFVector(question).data)
+        }
+      });
+    } catch (dbErr) {
+      console.error('[PRISMA] Erro ao salvar histórico:', dbErr);
+    }
+
+    res.json({
+      text: respostaText,
+      audioUrl: audioUrl,
+      source,
+      confidence
+    });
 
   } catch (error) {
-    console.error("Erro Pipeline:", error);
-    res.status(500).json({ error: "Erro interno" });
+    console.error("[CHAT] ERRO COMPLETO:", {
+      type: error instanceof Error ? error.constructor.name : typeof error,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      error: error
+    });
+    
+    const err = error as Error;
+    console.error("Stack completo:", err.stack);
+    
+    res.status(500).json({ 
+      error: "Erro interno",
+      details: process.env.NODE_ENV === 'development' ? {
+        message: err.message,
+        type: err.constructor.name
+      } : undefined
+    });
   }
 }

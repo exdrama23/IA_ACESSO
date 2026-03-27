@@ -1,8 +1,13 @@
 import axios from "axios";
+import { getConfig } from "../config/settings";
+import { uploadAudioToCloudinary } from "../services/cloudinary";
 
 export async function gerarAudio(texto: string): Promise<string> {
+  const config = await getConfig();
   const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || "";
-  const VOICE_ID = process.env.ELEVENLABS_VOICE_ID || "JBFqnCBsd6RMkjVDRZzb"; 
+  const VOICE_ID = config.tts.voiceId || "hpp4J3VqNfWAUOO0d1Us"; 
+
+  let audioBuffer: Buffer | null = null;
 
   if (ELEVENLABS_API_KEY) {
     const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`;
@@ -23,29 +28,42 @@ export async function gerarAudio(texto: string): Promise<string> {
         responseType: 'arraybuffer' 
       });
 
-      const base64Audio = Buffer.from(response.data).toString('base64');
-      console.log("[ELEVENLABS] Áudio gerado com sucesso (Base64)");
-      return `data:audio/mpeg;base64,${base64Audio}`;
+      audioBuffer = Buffer.from(response.data);
+      console.log("[ELEVENLABS] Áudio gerado com sucesso");
       
     } catch (error: any) {
       console.error("[ELEVENLABS] Erro na API, tentando fallback do Google...");
     }
   }
 
+  if (!audioBuffer) {
+    try {
+      const googleTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(texto.substring(0, 200))}&tl=pt-br&client=tw-ob`;
+      const response = await axios({
+        method: 'get',
+        url: googleTtsUrl,
+        responseType: 'arraybuffer',
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+      
+      audioBuffer = Buffer.from(response.data);
+      console.log("[TTS] Áudio gerado via Google Fallback");
+    } catch (e: any) {
+      console.error(`[TTS] Erro fatal no fallback:`, e.message);
+      return "";
+    }
+  }
+
+  if (!audioBuffer) {
+    return "";
+  }
+
   try {
-    const googleTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(texto.substring(0, 200))}&tl=pt-br&client=tw-ob`;
-    const response = await axios({
-      method: 'get',
-      url: googleTtsUrl,
-      responseType: 'arraybuffer',
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
-    
-    const base64Audio = Buffer.from(response.data).toString('base64');
-    console.log("[TTS] Áudio gerado via Google Fallback (Base64)");
-    return `data:audio/mpeg;base64,${base64Audio}`;
-  } catch (e: any) {
-    console.error(`[TTS] Erro fatal no fallback:`, e.message);
+    const result = await uploadAudioToCloudinary(audioBuffer, `audio_response_${Date.now()}`);
+    console.log(`[CLOUDINARY] Áudio salvo com sucesso: ${result.secure_url}`);
+    return result.secure_url; 
+  } catch (cloudinaryError) {
+    console.error("[CLOUDINARY] Erro ao fazer upload:", cloudinaryError);
     return "";
   }
 }

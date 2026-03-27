@@ -23,7 +23,7 @@ const PINCH_PRESS_THRESHOLD = 0.04;
 const PINCH_RELEASE_THRESHOLD = 0.06;
 const TIMEOUT_DESISTENCIA = 1200;
 const CONFIDENCE = 0.45;
-const INFERENCE_INTERVAL_MS = 33; 
+const INFERENCE_INTERVAL_MS = 33;
 const MISSED_FRAMES_TO_ABSENT = 10;
 
 export function useRobustHandTracking(videoElement: HTMLVideoElement | null) {
@@ -55,11 +55,11 @@ export function useRobustHandTracking(videoElement: HTMLVideoElement | null) {
 
     const setup = async () => {
       try {
-        const mediapipeModuleUrl = "/node_modules/@mediapipe/tasks-vision/vision_bundle.mjs";
         const visionModule = (await import(
-           
-           mediapipeModuleUrl
+          // @ts-ignore
+          /* @vite-ignore */ "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs"
         )) as VisionModule;
+        
         const { FilesetResolver, HandLandmarker } = visionModule;
 
         const vision = await FilesetResolver.forVisionTasks(
@@ -72,7 +72,7 @@ export function useRobustHandTracking(videoElement: HTMLVideoElement | null) {
             delegate: "GPU"
           },
           runningMode: "VIDEO",
-          numHands: 1, 
+          numHands: 1,
           minHandDetectionConfidence: CONFIDENCE,
           minHandPresenceConfidence: CONFIDENCE,
           minTrackingConfidence: CONFIDENCE
@@ -156,7 +156,7 @@ export function useRobustHandTracking(videoElement: HTMLVideoElement | null) {
           handleMiss();
         }
       }
-      
+
       animationFrameId = requestAnimationFrame(predict);
     };
 

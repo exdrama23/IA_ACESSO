@@ -7,7 +7,26 @@ import fs from "fs";
 import { chat } from "./controllers/chat";
 import { initFAQEmbeddings } from "./ai/embeddings";
 import { initSemantic } from "./ai/semantic";
-import { getAdminDashboard, updateSystemConfig, getCacheStatistics } from "./controllers/admin";
+import { neuralDetector } from "./ai/neuralEmbeddings";
+import { getTables, getTableData } from "./controllers/database";
+import { 
+  getAdminDashboard, 
+  updateSystemConfig, 
+  getCacheStatistics,
+  getUserProfile,
+  getCalendarEvents,
+  createCalendarEvent,
+  updateCalendarEvent,
+  deleteCalendarEvent,
+  getMetricsDetailed,
+  getNotifications,
+  requestIntegrationChange,
+  verifyIntegrationCode,
+  updateIntegrationKey,
+  updateNotificationPreferences,
+  markNotificationRead,
+  deleteNotification
+} from "./controllers/admin";
 import { getMetrics, getAuditLogs } from "./controllers/metrics";
 import { login, logout, forgotPassword, resetPassword } from "./controllers/auth";
 import { verifyToken, requireAdmin } from "./middleware/auth";
@@ -23,7 +42,7 @@ const port = process.env.PORT || 3001;
 
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id']
 }));
 app.use(express.json());
@@ -59,6 +78,25 @@ app.post("/admin/config", verifyToken, requireAdmin, updateSystemConfig);
 app.get("/admin/cache-stats", verifyToken, requireAdmin, getCacheStatistics);
 app.get("/admin/metrics", verifyToken, requireAdmin, getMetrics);
 app.get("/admin/audit-logs", verifyToken, requireAdmin, getAuditLogs);
+app.get("/admin/database/tables", verifyToken, requireAdmin, getTables);
+app.get("/admin/database/tables/:tableName", verifyToken, requireAdmin, getTableData);
+
+app.get("/admin/user-profile", verifyToken, requireAdmin, getUserProfile);
+app.get("/admin/calendar-events", verifyToken, requireAdmin, getCalendarEvents);
+app.post("/admin/calendar-events", verifyToken, requireAdmin, createCalendarEvent);
+app.put("/admin/calendar-events/:id", verifyToken, requireAdmin, updateCalendarEvent);
+app.delete("/admin/calendar-events/:id", verifyToken, requireAdmin, deleteCalendarEvent);
+app.get("/admin/metrics-detailed", verifyToken, requireAdmin, getMetricsDetailed);
+
+app.get("/admin/notifications", verifyToken, requireAdmin, getNotifications);
+app.patch("/admin/notifications/:id/read", verifyToken, requireAdmin, markNotificationRead);
+app.delete("/admin/notifications/:id", verifyToken, requireAdmin, deleteNotification);
+app.put("/admin/notifications/preferences", verifyToken, requireAdmin, updateNotificationPreferences);
+
+app.post("/admin/integrations/request", verifyToken, requireAdmin, requestIntegrationChange);
+app.post("/admin/integrations/verify", verifyToken, requireAdmin, verifyIntegrationCode);
+app.post("/admin/integrations/update", verifyToken, requireAdmin, updateIntegrationKey);
+
 app.post("/auth/logout", verifyToken, logout);
 
 app.use(errorHandler);
@@ -74,6 +112,15 @@ const server = app.listen(port, async () => {
 
   await initFAQEmbeddings();
   await initSemantic();
+  
+  console.log('[APP] Inicializando Rede Neural Sentence-Transformers...');
+  try {
+    await neuralDetector.initialize();
+    console.log('[APP] [SUCESSO] Rede Neural inicializada com sucesso');
+  } catch (error) {
+    console.error('[APP] [ERRO] Falha ao inicializar rede neural:', error);
+  }
+
   console.log(`Servidor AcessoIA (PROD-READY) rodando em http://localhost:${port}`);
 });
 

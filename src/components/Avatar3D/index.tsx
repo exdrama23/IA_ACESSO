@@ -125,13 +125,22 @@ function Olhos() {
 function IAVisual() {
   const mesh = useRef<THREE.Mesh>(null);
   const material = useRef<THREE.ShaderMaterial>(null);
-  const { status, cursorPosition, isUserPresent } = useAppStore();
+  const { status, cursorPosition, isUserPresent, activeVoiceId } = useAppStore();
   const { size, viewport } = useThree();
 
   const isPortrait = size.height > size.width;
 
   const targetPoint = useRef(new THREE.Vector3(0, 0, 0));
   const currentPoint = useRef(new THREE.Vector3(0, 0, 0));
+
+  const getVoiceColorValue = (voiceId: string): number => {
+    const voiceMap: { [key: string]: number } = {
+      "hpp4J3VqNfWAUOO0d1Us": 0.0,  
+      "21m00Tcm4TlvDq8ikWAM": 0.33, 
+      "nPczCjzI2aLN5dFF5skQ": 0.66, 
+    };
+    return voiceMap[voiceId] || 0.0;
+  };
 
   const uniforms = useMemo(
     () => ({
@@ -140,8 +149,9 @@ function IAVisual() {
       uState: { value: 0 },
       uMouse: { value: new THREE.Vector3(0, 0, 0) },
       uIsUserPresent: { value: 0.0 },
+      uVoiceColor: { value: getVoiceColorValue(activeVoiceId) },
     }),
-    []
+    [activeVoiceId]
   );
 
   useFrame((state) => {
@@ -150,6 +160,7 @@ function IAVisual() {
     const time = state.clock.getElapsedTime();
     material.current.uniforms.uTime.value = time;
     material.current.uniforms.uIsUserPresent.value = isUserPresent ? 1.0 : 0.0;
+    material.current.uniforms.uVoiceColor.value = getVoiceColorValue(activeVoiceId);
 
     let targetIntensity = 0.15;
     let targetState = 0;

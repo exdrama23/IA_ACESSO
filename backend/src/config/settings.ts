@@ -16,6 +16,8 @@ export interface SystemConfig {
   };
   tts: {
     model: TTSModel;
+    voiceId: string;
+    availableVoices: { id: string, name: string }[];
   };
   limits: {
     max_audios_per_session: number;
@@ -39,7 +41,11 @@ const DEFAULT_CONFIG: SystemConfig = {
     ttl_seconds: 259200
   },
   tts: {
-    model: 'elevenlabs'
+    model: 'elevenlabs',
+    voiceId: 'hpp4J3VqNfWAUOO0d1Us', 
+    availableVoices: [
+      { id: 'hpp4J3VqNfWAUOO0d1Us', name: 'Eduarda (Oficial)' }
+    ]
   },
   limits: {
     max_audios_per_session: 100,
@@ -68,10 +74,16 @@ export async function loadConfig(): Promise<SystemConfig> {
     const ttl = parseInt(await redis.get('config:cache:ttl_seconds') || '259200');
     const maxAudios = parseInt(await redis.get('config:cache:max_per_session') || '100');
 
+    const voiceId: string = (await redis.get('config:tts:voiceId')) as string || 'hpp4J3VqNfWAUOO0d1Us';
+    const availableVoicesStr = await redis.get('config:tts:availableVoices');
+    const availableVoices: { id: string; name: string }[] = availableVoicesStr 
+      ? JSON.parse(availableVoicesStr as string) 
+      : DEFAULT_CONFIG.tts.availableVoices;
+
     const config: SystemConfig = {
       embedding: { strategy, tfidf_threshold: tfidfThreshold, gemini_threshold: geminiThreshold },
       audio: { storage, ttl_seconds: ttl },
-      tts: { model: ttsModel },
+      tts: { model: ttsModel, voiceId: voiceId, availableVoices: availableVoices },
       limits: { max_audios_per_session: maxAudios, max_request_size_mb: 10 },
       metadata: {
         last_modified: parseInt(await redis.get('config:admin:last_modified') || Date.now().toString()),

@@ -19,7 +19,10 @@ interface AppState {
   isUserPresent: boolean;
   isPinching: boolean;
   handLandmarks: HandLandmark[];
-  cursorPosition: THREE.Vector3; 
+  cursorPosition: THREE.Vector3;
+  
+  activeVoiceId: string;
+  setActiveVoiceId: (voiceId: string) => void;
   
   setHandData: (landmarks: HandLandmark[], isPinching: boolean, isPresent: boolean) => void;
   setCursorPosition: (pos: THREE.Vector3) => void;
@@ -36,6 +39,9 @@ export const useAppStore = create<AppState>((set) => ({
   isPinching: false,
   handLandmarks: [],
   cursorPosition: new THREE.Vector3(0, 0, 0),
+  
+  activeVoiceId: "hpp4J3VqNfWAUOO0d1Us",
+  setActiveVoiceId: (voiceId) => set({ activeVoiceId: voiceId }),
 
   setHandData: (landmarks, isPinching, isPresent) => set({ 
     handLandmarks: landmarks, 

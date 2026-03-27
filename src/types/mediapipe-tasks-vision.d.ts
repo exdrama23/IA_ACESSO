@@ -42,3 +42,7 @@ declare module "@mediapipe/tasks-vision" {
     close(): void;
   }
 }
+
+declare module "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs" {
+  export * from "@mediapipe/tasks-vision";
+}

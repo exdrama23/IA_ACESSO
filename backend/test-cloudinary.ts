@@ -6,7 +6,6 @@ dotenv.config({ path: path.resolve(__dirname, './.env') });
 
 console.log('=== TESTE DE CREDENCIAIS CLOUDINARY ===\n');
 
-// Verificar credenciais carregadas
 const credentials = {
   cloud_name: process.env.CLOUDINARY_NAME,
   api_key: process.env.CLOUDINARY_KEY,
@@ -16,17 +15,15 @@ const credentials = {
 console.log('Credenciais carregadas:');
 console.log(JSON.stringify(credentials, null, 2));
 
-// Configurar Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_NAME,
   api_key: process.env.CLOUDINARY_KEY,
   api_secret: process.env.CLOUDINARY_SECRET
 });
 
-// Testar API
 async function testCloudinary() {
   try {
-    console.log('\n📤 Testando upload de arquivo vazio...');
+    console.log('\nTestando upload de arquivo vazio...');
     
     const result = await cloudinary.uploader.upload_stream(
       {
@@ -57,7 +54,6 @@ async function testCloudinary() {
       }
     );
 
-    // Enviar dados vazios
     result.end(Buffer.from('test'));
   } catch (error) {
     console.error('Erro ao testar:', error);

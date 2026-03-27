@@ -47,6 +47,32 @@ export default function Home() {
   const handLandmarks = useAppStore((state) => state.handLandmarks);
   const isUserPresent = useAppStore((state) => state.isUserPresent);
   const isRecording = useAppStore((state) => state.isRecording);
+  const { setActiveVoiceId } = useAppStore();
+
+  useEffect(() => {
+    const loadVoiceConfig = async () => {
+      try {
+        const token = localStorage.getItem('acessoia_token');
+        if (!token) return;
+
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        const response = await fetch(`${API_URL}/admin/dashboard`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.config?.tts?.voiceId) {
+            setActiveVoiceId(result.config.tts.voiceId);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar configuração de voz:', error);
+      }
+    };
+
+    loadVoiceConfig();
+  }, [setActiveVoiceId]);
 
   useRobustHandTracking(videoElement);
 

@@ -3,6 +3,7 @@ export interface FAQItem {
   questions: string[];
   answer: string;
   keywords: string[];
+  linkDirecionamento?: string;
 }
 
 export const faq: Record<string, FAQItem[]> = {
@@ -40,7 +41,8 @@ export const faq: Record<string, FAQItem[]> = {
         "quais as opções de internet?"
       ],
       answer: "Temos planos de internet fibra com 50 Mega por R$ 79,90, 150 Mega por R$ 99,90, 300 Mega por R$ 119,90 e 600 Mega por R$ 129,90 por mês. Quanto maior a velocidade, melhor para casas com mais pessoas, jogos e streaming.",
-      keywords: ["fibra", "internet", "velocidade", "mega", "preço", "mensalidade", "acesso", "valor", "serviço", "explicar", "entendi"]
+      keywords: ["fibra", "internet", "velocidade", "mega", "preço", "mensalidade", "acesso", "valor", "serviço", "explicar", "entendi"],
+      linkDirecionamento: "https://acesso.net/internet-fibra"
     },
     {
       category: "Internet Fibra",
@@ -55,7 +57,8 @@ export const faq: Record<string, FAQItem[]> = {
         "Tem internet mais barata para quem dá aula?"
       ],
       answer: "Sim! Temos o plano Fibra Professor de 200 Mega por um valor exclusivo de R$ 90,00.",
-      keywords: ["professor", "educação", "200 mega", "desconto", "especial"]
+      keywords: ["professor", "educação", "200 mega", "desconto", "especial"],
+      linkDirecionamento: "https://acesso.net/internet-fibra"
     },
     {
       category: "Internet Fibra",
@@ -69,7 +72,8 @@ export const faq: Record<string, FAQItem[]> = {
         "Além da internet, o que mais vem?"
       ],
       answer: "Todos os nossos planos de fibra já incluem o Skeelo para você aproveitar diversos livros digitais sem custo adicional.",
-      keywords: ["skeelo", "benefício", "livros", "extra", "bônus"]
+      keywords: ["skeelo", "benefício", "livros", "extra", "bônus"],
+      linkDirecionamento: "https://acesso.net/internet-fibra"
     }
   ],
   acesso_saude: [
@@ -88,7 +92,8 @@ export const faq: Record<string, FAQItem[]> = {
         "Como faço para ter assistência médica?"
       ],
       answer: "Oferecemos planos de Clínica Médica e Telemedicina. Na Clínica Médica, você tem consultas presenciais com valores acessíveis. Já na Telemedicina, você pode falar com médico online. Os planos começam a partir de R$ 19,90 e variam conforme o tipo de atendimento escolhido.",
-      keywords: ["saúde", "médico", "clínica", "telemedicina", "consulta", "família", "cobertura"]
+      keywords: ["saúde", "médico", "clínica", "telemedicina", "consulta", "família", "cobertura"],
+      linkDirecionamento: "https://acesso.net/saude"
     },
     {
       category: "Acesso Saúde",
@@ -103,7 +108,8 @@ export const faq: Record<string, FAQItem[]> = {
         "Quantas pessoas podem usar o plano família?"
       ],
       answer: "O plano Família custa R$ 59,90 por mês e oferece consultas ilimitadas com Clínico Geral e Pediatra, além de 5 consultas mensais com especialistas para toda a família.",
-      keywords: ["família", "especialidades", "ilimitado", "pediatra", "clínico"]
+      keywords: ["família", "especialidades", "ilimitado", "pediatra", "clínico"],
+      linkDirecionamento: "https://acesso.net/saude"
     },
     {
       category: "Acesso Saúde",
@@ -126,7 +132,8 @@ export const faq: Record<string, FAQItem[]> = {
         "Consigo ajuda para agendar minha consulta por vídeo?"
       ],
       answer: "Você pode agendar sua consulta por vídeo diretamente pelo aplicativo Acesso Net Fibra. Basta acessar a opção de telemedicina e escolher o melhor horário disponível entre as opções do sistema.",
-      keywords: ["agendar", "vídeo", "aplicativo", "app", "telemedicina", "horário", "celular", "online"]
+      keywords: ["agendar", "vídeo", "aplicativo", "app", "telemedicina", "horário", "celular", "online"],
+      linkDirecionamento: "https://acesso.net/saude"
     },
     {
       category: "Acesso Saúde",
@@ -143,7 +150,8 @@ export const faq: Record<string, FAQItem[]> = {
         "O clínico geral é ilimitado mesmo?"
       ],
       answer: "O plano oferece consultas ilimitadas com Clínico Geral e Pediatra, além de 5 consultas por mês com especialistas. O atendimento é realizado após a ligação do cliente.",
-      keywords: ["consultas", "ilimitado", "especialidades", "clínico", "pediatra", "agora", "na hora", "médico"]
+      keywords: ["consultas", "ilimitado", "especialidades", "clínico", "pediatra", "agora", "na hora", "médico"],
+      linkDirecionamento: "https://acesso.net/saude"
     }
   ],
   movel_e_fixo: [
@@ -162,7 +170,8 @@ export const faq: Record<string, FAQItem[]> = {
         "O chip tem sinal bom?"
       ],
       answer: "Temos o plano Baratinho 15GB por R$ 39,90 mensais. Ele inclui chip, internet de 15GB, além de ligações e WhatsApp ilimitados.",
-      keywords: ["celular", "móvel", "chip", "15gb", "baratinho", "whatsapp", "ligação"]
+      keywords: ["celular", "móvel", "chip", "15gb", "baratinho", "whatsapp", "ligação"],
+      linkDirecionamento: "https://acesso.net/celular"
     },
     {
       category: "Celular e Telefone",
@@ -176,7 +185,8 @@ export const faq: Record<string, FAQItem[]> = {
         "Telefone fixo residencial valor"
       ],
       answer: "A telefonia fixa possui chamadas ilimitadas pelo valor de R$ 69,90 por mês.",
-      keywords: ["fixo", "telefone", "ligação", "ilimitado"]
+      keywords: ["fixo", "telefone", "ligação", "ilimitado"],
+      linkDirecionamento: "https://acesso.net/celular"
     }
   ],
   servicos_adicionais: [
@@ -192,7 +202,8 @@ export const faq: Record<string, FAQItem[]> = {
         "Valor da mensalidade da Globo"
       ],
       answer: "O Globoplay padrão com anúncios pode ser assinado por R$ 22,90 mensais diretamente na fatura da Acesso.",
-      keywords: ["globoplay", "streaming", "filmes", "novelas", "vídeo"]
+      keywords: ["globoplay", "streaming", "filmes", "novelas", "vídeo"],
+      linkDirecionamento: "https://acesso.net/servicos"
     }
   ],
   institucional_e_historia: [
@@ -214,7 +225,8 @@ export const faq: Record<string, FAQItem[]> = {
         "Desde quando a Acesso existe?"
       ],
       answer: "A Acesso Net é um provedor de internet de Sergipe com mais de 20 anos de experiência. A empresa possui sede em Estância e é reconhecida pela qualidade dos seus serviços.",
-      keywords: ["empresa", "quem somos", "história", "estância", "confiança", "sergipe", "experiência"]
+      keywords: ["empresa", "quem somos", "história", "estância", "confiança", "sergipe", "experiência"],
+      linkDirecionamento: "https://acesso.net"
     }
   ],
   suporte_e_atendimento: [
@@ -240,7 +252,8 @@ export const faq: Record<string, FAQItem[]> = {
         "Quanto tempo demora para o técnico vir?"
       ],
       answer: "O suporte funciona 24 horas por dia, todos os dias da semana. O atendimento está disponível pelo telefone gratuito 0800 731 1030, pelo WhatsApp.",
-      keywords: ["suporte", "atendimento", "telefone", "whatsapp", "ligar", "ajuda", "0800", "24h", "técnico"]
+      keywords: ["suporte", "atendimento", "telefone", "whatsapp", "ligar", "ajuda", "0800", "24h", "técnico"],
+      linkDirecionamento: "https://acesso.net/suporte"
     }
   ],
   tecnologia_e_velocidade: [
@@ -262,7 +275,8 @@ export const faq: Record<string, FAQItem[]> = {
         "A velocidade de upload é alta?"
       ],
       answer: "A internet é 100% fibra óptica, o que garante estabilidade e proteção contra interferências, inclusive em dias de chuva. A velocidade de download e upload é simétrica, proporcionando navegação rápida e sem travamentos.",
-      keywords: ["fibra", "estabilidade", "chuva", "rápida", "download", "upload", "jogar", "netflix"]
+      keywords: ["fibra", "estabilidade", "chuva", "rápida", "download", "upload", "jogar", "netflix", "ping", "baixo", "jogos"],
+      linkDirecionamento: "https://acesso.net/internet-fibra"
     }
   ],
   aplicativo_e_segunda_via: [
@@ -286,7 +300,8 @@ export const faq: Record<string, FAQItem[]> = {
         "Mudar forma de pagamento pelo app"
       ],
       answer: "Pelo aplicativo Acesso Net Fibra é possível retirar a segunda via do boleto, realizar pagamentos com PIX, acompanhar faturas e verificar o consumo de internet.",
-      keywords: ["boleto", "fatura", "pix", "app", "aplicativo", "pagar", "celular", "segunda via"]
+      keywords: ["boleto", "fatura", "pix", "app", "aplicativo", "pagar", "celular", "segunda via"],
+      linkDirecionamento: "https://acesso.net"
     }
   ],
   localizacao_e_cobertura: [
@@ -308,7 +323,8 @@ export const faq: Record<string, FAQItem[]> = {
         "Vocês chegam até o interior?"
       ],
       answer: "A loja física fica no centro de Estância, em Sergipe. A cobertura abrange diversas cidades da região e do litoral, incluindo Abaís, Praia do Saco, Porto do Mato e Aracaju.",
-      keywords: ["endereço", "loja", "estância", "cidade", "cobertura", "aracaju", "abaís"]
+      keywords: ["endereço", "loja", "estância", "cidade", "cobertura", "aracaju", "abaís", "rua"],
+      linkDirecionamento: "https://acesso.net/cobertura"
     }
   ],
   internet_empresarial: [
@@ -328,7 +344,8 @@ export const faq: Record<string, FAQItem[]> = {
         "Como contratar internet empresarial?"
       ],
       answer: "Existem soluções específicas para empresas com link dedicado, oferecendo uma conexão exclusiva, estável e segura para negócios corporativos.",
-      keywords: ["empresa", "cnpj", "link dedicado", "corporativo", "negócio"]
+      keywords: ["empresa", "cnpj", "link dedicado", "corporativo", "negócio"],
+      linkDirecionamento: "https://acesso.net/empresarial"
     }
   ],
   dados_oficiais: [
@@ -341,7 +358,8 @@ export const faq: Record<string, FAQItem[]> = {
         "Número do registro da empresa (CNPJ)"
       ],
       answer: "O nome oficial da empresa é JF Soluções Informática LTDA. Para informações sobre o CNPJ, é necessário realizar a solicitação diretamente pelo canal de atendimento oficial.",
-      keywords: ["cnpj", "registro", "segurança"]
+      keywords: ["cnpj", "registro", "segurança"],
+      linkDirecionamento: "https://acesso.net"
     },
     {
       category: "Dados Oficiais",
@@ -354,7 +372,8 @@ export const faq: Record<string, FAQItem[]> = {
         "Qual o nome no contrato?"
       ],
       answer: "O nome oficial é JF Soluções Informática LTDA. A empresa está devidamente legalizada e registrada nos órgãos competentes.",
-      keywords: ["razão social", "nome oficial", "jf soluções", "legalizada"]
+      keywords: ["razão social", "nome oficial", "jf soluções", "legalizada"],
+      linkDirecionamento: "https://acesso.net"
     }
   ],
   saudacoes: [
@@ -373,7 +392,8 @@ export const faq: Record<string, FAQItem[]> = {
         "Oi, tudo bom?"
       ],
       answer: "Olá! Tudo bem por aqui. Sou a assistente virtual da Acesso Net e estou aqui para tirar todas as suas dúvidas sobre nossos serviços de internet e saúde.",
-      keywords: ["oi", "ola", "bom dia", "boa tarde", "boa noite", "tudo bem"]
+      keywords: ["oi", "ola", "bom dia", "boa tarde", "boa noite", "tudo bem"],
+      linkDirecionamento: "https://acesso.net"
     }, 
     {
       category: "Saudações",
@@ -387,7 +407,8 @@ export const faq: Record<string, FAQItem[]> = {
         "Como pode me ajudar?"
       ],
       answer: "Eu sou a inteligência artificial da Acesso Net. Posso te passar informações sobre nossos planos de fibra óptica, serviços de saúde, telefonia móvel e suporte técnico.",
-      keywords: ["quem", "nome", "ajudar", "faz", "voce"]
+      keywords: ["quem", "nome", "ajudar", "faz", "voce"],
+      linkDirecionamento: "https://acesso.net"
     }
   ],
   fallback: [
@@ -395,7 +416,8 @@ export const faq: Record<string, FAQItem[]> = {
       category: "Erro",
       questions: ["erro_entendimento"],
       answer: "Desculpa, não entendi muito bem. Você pode repetir ou perguntar de outra forma?",
-      keywords: ["desculpa", "repetir", "entendi"]
+      keywords: ["desculpa", "repetir", "entendi"],
+      linkDirecionamento: "https://acesso.net/suporte"
     }
   ]
 };

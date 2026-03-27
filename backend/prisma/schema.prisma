@@ -26,6 +26,10 @@ model User {
   auditLogs     AuditLog[]
   chatHistories ChatHistory[]
   apiCalls      ApiCall[]
+  calendarEvents CalendarEvent[]
+  notifications  Notification[]
+  notificationPreferences NotificationPreference?
+  integrationKeys IntegrationKey[]
   
   // Timestamps
   createdAt DateTime @default(now())
@@ -33,6 +37,24 @@ model User {
 
   @@index([email])
   @@index([role])
+}
+
+// ============ MODELO: CalendarEvent (Calendário Administrativo) ============
+model CalendarEvent {
+  id        String   @id @default(cuid())
+  adminId   String
+  admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  
+  date      DateTime
+  title     String
+  description String? @db.Text
+  color     String   // Hex color code (ex: #2563eb)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([adminId])
+  @@index([date])
 }
 
 // ============ MODELO: LoginAttempt (Segurança) ============
@@ -178,5 +200,55 @@ model ApiUsage {
   
   @@index([service])
   @@index([date])
-  @@unique([service, date])
+  @@unique([service, date], name: "service_date")
+}
+
+// ============ MODELO: Notification (Notificações de Sistema) ============
+model Notification {
+  id        String   @id @default(cuid())
+  adminId   String
+  admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  
+  type      String   // "error" | "warning" | "success" | "info"
+  title     String
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([adminId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+// ============ MODELO: NotificationPreference (Preferências de Admin) ============
+model NotificationPreference {
+  id        String   @id @default(cuid())
+  adminId   String   @unique
+  admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  
+  infrastructureErrors Boolean @default(true)
+  performanceWarnings  Boolean @default(true)
+  backupLogs           Boolean @default(true)
+  weeklyCostReports    Boolean @default(false)
+  
+  updatedAt DateTime @updatedAt
+}
+
+// ============ MODELO: IntegrationKey (Segurança de Chaves) ============
+model IntegrationKey {
+  id           String   @id @default(cuid())
+  adminId      String
+  admin        User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  
+  service      String   // "gemini" | "elevenlabs" | "cloudinary"
+  encryptedKey String   // Hash ou Encriptação
+  isActive     Boolean  @default(true)
+  
+  lastVerified DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([adminId, service])
 }

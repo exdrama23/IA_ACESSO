@@ -75,6 +75,7 @@ export const fragmentShader = `
   uniform float uState; 
   uniform vec3 uMouse;
   uniform float uIsUserPresent;
+  uniform float uVoiceColor;
 
   void main() {
     float fresnel = pow(1.2 - dot(vNormal, vec3(0, 0, 1.0)), 2.5);
@@ -82,10 +83,18 @@ export const fragmentShader = `
     vec3 baseColor;
     vec3 glowColor;
 
-    if (uState < 0.5) {
+    if (uVoiceColor < 0.2) {
       baseColor = vec3(0.9, 0.0, 0.1);
       glowColor = vec3(1.0, 0.1, 0.2);
+    } else if (uVoiceColor < 0.5) {
+      baseColor = vec3(0.0, 0.8, 0.4);
+      glowColor = vec3(0.2, 1.0, 0.6);
     } else {
+      baseColor = vec3(0.2, 0.4, 1.0);
+      glowColor = vec3(0.4, 0.6, 1.0);
+    }
+
+    if (uState > 0.5) {
       vec3 purple = vec3(0.4, 0.0, 0.8); 
       vec3 pinkRed = vec3(1.0, 0.1, 0.4); 
       

@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { createSystemNotification } from '../utils/notifications';
 
 export class AppError extends Error {
   constructor(
@@ -22,6 +23,14 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
     message,
     stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
+
+  if (statusCode >= 500) {
+    createSystemNotification({
+      type: 'error',
+      title: 'Erro Crítico de Sistema',
+      message: `Ocorreu uma falha no endpoint ${req.path}: ${message}`
+    });
+  }
 
   res.status(statusCode).json({
     status: 'error',

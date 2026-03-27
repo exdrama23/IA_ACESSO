@@ -15,9 +15,15 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { generateTFIDFVector } from "../ai/semantic";
 import { getConfig } from "../config/settings";
 import { prisma } from "../lib/prisma";
-import { getCachedAudioUrl, cacheAudioUrl, generateResponseHash } from "../utils/audioCache";
+import { getCachedAudioByQuestion, cacheAudioByQuestion } from "../utils/audioCache";
+import { findSimilarCachedQuestion, cacheQuestionWithAudio } from "../utils/questionMatcher";
+import { neuralDetector } from "../ai/neuralEmbeddings";
+import { neuralMetrics } from "../utils/neuralMetrics";
+import { formatarRespostaComDirecionamento } from "../utils/responseFormatter";
+import { faq } from "../data/faq";
 import dotenv from "dotenv";
 import path from "path";
+import { performance } from "perf_hooks";
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
@@ -51,6 +57,7 @@ import { trackAICall } from "../services/costTracker";
 
 export async function chat(req: Request, res: Response, next: any) {
   try {
+    const startTime = performance.now();
     console.log('[CHAT] Iniciando processamento...');
     const { text, sessionId: bodySessionId } = req.body;
     const audioFile = req.file;
@@ -82,57 +89,73 @@ export async function chat(req: Request, res: Response, next: any) {
       return res.json({ text: "Comando bloqueado por segurança.", audioUrl: "" });
     }
 
-    const topMatches = await searchFAQ(question, 3);
     let respostaText = "";
     let contextText = "";
     let source = "IA_SEMANTICA";
+    let matchScore = 0;
 
-    if (topMatches.length > 0 && topMatches[0].score > 0.4) {
-      console.log(`[BUSCA LOCAL] Top Match Score: ${topMatches[0].score.toFixed(4)} para: "${topMatches[0].item.questions[0]}"`);
+    // ═══════════════════════════════════════════════════════════════
+    // PASSO 1: Detectar categoria com NEURAL embeddings
+    // ═══════════════════════════════════════════════════════════════
+    const neuralMatch = await neuralDetector.findCategoryBySimilarity(question, 0.85);
 
-      if (topMatches[0].score > 0.6) {
-        console.log(`[FAQ] Resposta direta encontrada (Confiança: ${topMatches[0].score.toFixed(4)})`);
-        respostaText = topMatches[0].item.answer;
-        source = "FAQ_DIRETO";
-      } else {
-        console.log(`[FAQ] Confiança insuficiente para resposta direta (${topMatches[0].score.toFixed(4)}), usando como contexto.`);
-        contextText = topMatches
-          .filter(match => match.score > 0.4)
-          .map(match => match.item.answer)
-          .join(" ");
+    if (neuralMatch) {
+      const latency = performance.now() - startTime;
+      neuralMetrics.recordNeuralMatch(neuralMatch.score, latency);
+      
+      console.log(`[CHAT] ✓ Categoria detectada por rede neural: ${neuralMatch.categoria} (Score: ${neuralMatch.score.toFixed(3)})`);
+      
+      let faqItem = null;
+      for (const cat in faq) {
+        faqItem = faq[cat].find(item => item.category === neuralMatch.categoria);
+        if (faqItem) break;
+      }
+
+      if (faqItem) {
+        // IA fala e exibe apenas o texto da resposta
+        respostaText = faqItem.answer;
+        source = "FAQ_NEURAL";
+        matchScore = neuralMatch.score;
       }
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // PASSO 2: Fallback para Cache Redis (Texto)
+    // ═══════════════════════════════════════════════════════════════
     if (!respostaText) {
       const textCacheKey = gerarChave(question, "text");
       const cachedResponse = await getCache(textCacheKey) as string;
 
       if (cachedResponse) {
+        neuralMetrics.recordCacheMatch();
         console.log("[CACHE] Resposta de texto recuperada do Redis");
         respostaText = cachedResponse;
         source = "CACHE_REDIS";
       }
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // PASSO 3: Fallback para Gemini
+    // ═══════════════════════════════════════════════════════════════
     if (!respostaText) {
+      neuralMetrics.recordGeminiMatch();
       try {
         console.log("[GEMINI] Consultando API do Gemini...");
         const history = await getConversationHistory(sessionId);
+        
+        // Usar busca semântica legada APENAS para fornecer contexto ao Gemini se neural falhar
+        const topMatches = await searchFAQ(question, 2);
+        contextText = topMatches.map(m => m.item.answer).join("\n");
+
         respostaText = await askGemini(question, contextText, history);
 
         const textCacheKey = gerarChave(question, "text");
         await setCache(textCacheKey, respostaText, THREE_DAYS_SECONDS);
         source = "IA_GEMINI";
       } catch (geminiError) {
-        console.error("FALHA TOTAL NO GEMINI. Ativando Independência Total (Melhor Chute do FAQ)...");
-        if (topMatches.length > 0) {
-          console.log(`[FALLBACK FAQ] Usando o melhor resultado encontrado localmente (Score: ${topMatches[0].score.toFixed(4)})`);
-          respostaText = topMatches[0].item.answer;
-          source = "FALLBACK_FAQ_LOCAL";
-        } else {
-          respostaText = "Desculpe, estou com uma instabilidade técnica. Pode repetir a pergunta em instantes?";
-          source = "ERRO_SISTEMA";
-        }
+        console.error("FALHA NO GEMINI.");
+        respostaText = "Desculpe, estou com uma instabilidade técnica. Pode repetir a pergunta em instantes?";
+        source = "ERRO_SISTEMA";
       }
     }
 
@@ -141,27 +164,77 @@ export async function chat(req: Request, res: Response, next: any) {
     const config = await getConfig();
     console.log(`[AUDIO] Processando cache de áudio...`);
 
-    const responseHash = generateResponseHash(respostaText);
-    console.log(`[AUDIO] Hash da resposta: ${responseHash}`);
+    const activeVoiceId = config.tts.voiceId || "hpp4J3VqNfWAUOO0d1Us";
+    console.log(`[AUDIO] Voz ativa: ${activeVoiceId}`);
 
     let audioUrl = "";
     let confidence = "100%";
+    let audioSource = "NOVO";
 
-    const cachedAudioUrl = await getCachedAudioUrl(responseHash);
-    
-    if (cachedAudioUrl) {
-      console.log(`[AUDIO]  Reutilizando áudio da cache (sem gerar novo)`);
-      audioUrl = cachedAudioUrl;
-      source = "CACHE_AUDIO_HASH";
-    } else {
-      console.log(`[AUDIO] Gerando novo áudio com TTS...`);
-      const audioUrl_generated = await gerarAudio(respostaText);
+    console.log(`\n═══════════════════════════════════════════════`);
+    console.log(`[FLUXO] INICIANDO BUSCA DE ÁUDIO EM CACHE`);
+    console.log(`═══════════════════════════════════════════════`);
 
-      audioUrl = audioUrl_generated;
+    // PASSO 1: Buscar perguntas SIMILARES no Redis (mesma categoria + semântica)
+    console.log(`\n[PASSO 1] Buscando perguntas similares no Redis...`);
+    const similarQuestion = await findSimilarCachedQuestion(question, activeVoiceId, 0.5);
+
+    if (similarQuestion && similarQuestion.audioUrl) {
+      console.log(`\n✓ [SUCESSO] Pergunta similar encontrada!`);
+      console.log(`  Pergunta similar: "${similarQuestion.pergunta}"`);
+      console.log(`  Categoria: ${similarQuestion.category || "Sem categoria"}`);
+      console.log(`  URL do áudio (Redis): ${similarQuestion.audioUrl}`);
+      console.log(`\n  → REUTILIZANDO áudio existente (SEM gerar novo)`);
       
-      await cacheAudioUrl(responseHash, audioUrl, config.audio.ttl_seconds);
-      console.log(`[AUDIO] Novo áudio gerado, uploadado e cacheado`);
+      audioUrl = similarQuestion.audioUrl;
+      audioSource = "REDIS_SIMILAR";
+      source = `${source}_AUDIO_REDIS_SIMILAR`;
+      
+      // Salvar a NOVA pergunta com o MESMO áudio (sem fazer novo upload)
+      console.log(`\n[PASSO 2] Salvando nova pergunta vinculada ao áudio existente...`);
+      await cacheQuestionWithAudio(question, audioUrl, activeVoiceId, config.audio.ttl_seconds);
+      console.log(`  ✓ Nova pergunta cacheada com URL do Redis`);
+      
+    } else {
+      // PASSO 2: Se não encontrar similar, buscar por EXATIDÃO na pergunta
+      console.log(`\n[PASSO 2] Nenhuma similar encontrada. Buscando por exatidão...`);
+      const cachedAudio = await getCachedAudioByQuestion(question, activeVoiceId);
+      
+      if (cachedAudio && cachedAudio.audioUrl) {
+        console.log(`\n✓ [SUCESSO] Pergunta exata encontrada!`);
+        console.log(`  URL do áudio (Redis): ${cachedAudio.audioUrl}`);
+        console.log(`\n  → REUTILIZANDO áudio existente (SEM gerar novo)`);
+        
+        audioUrl = cachedAudio.audioUrl;
+        audioSource = "REDIS_EXATO";
+        source = source === "CACHE_REDIS" ? "CACHE_AUDIO_REDIS" : `${source}_AUDIO_REDIS_EXATO`;
+        
+      } else {
+        // PASSO 3: Se não encontrar nada, gerar novo áudio
+        console.log(`\n[PASSO 3] Nenhum áudio em cache. Gerando novo áudio com TTS...`);
+        const audioUrl_generated = await gerarAudio(respostaText);
+
+        if (audioUrl_generated) {
+          console.log(`\n✓ [SUCESSO] Áudio gerado e enviado para Cloudinary`);
+          console.log(`  Nova URL (Cloudinary): ${audioUrl_generated}`);
+          
+          audioUrl = audioUrl_generated;
+          audioSource = "CLOUDINARY_NOVO";
+          
+          // Salvar a nova pergunta com seu novo áudio
+          console.log(`\n[PASSO 4] Salvando pergunta com novo áudio...`);
+          await cacheQuestionWithAudio(question, audioUrl, activeVoiceId, config.audio.ttl_seconds);
+          console.log(`  ✓ Pergunta cacheada no Redis com URL da Cloudinary`);
+        } else {
+          console.error("\n✗ [ERRO] Falha ao gerar áudio");
+          audioUrl = "";
+        }
+      }
     }
+    
+    console.log(`\n═══════════════════════════════════════════════`);
+    console.log(`[RESUMO] Fonte do áudio: ${audioSource}`);
+    console.log(`═══════════════════════════════════════════════\n`);
 
     try {
       await prisma.chatHistory.create({

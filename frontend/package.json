@@ -7,7 +7,7 @@
     "dev": "concurrently \"pnpm run dev:frontend\" \"pnpm run dev:backend\"",
     "dev:frontend": "vite",
     "dev:backend": "pnpm --prefix backend run dev",
-    "build": "prisma generate --schema=backend/prisma/schema.prisma && tsc -b && vite build",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

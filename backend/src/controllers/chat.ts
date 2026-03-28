@@ -105,9 +105,9 @@ export async function chat(req: Request, res: Response, next: any) {
       
       console.log(`[CHAT] ✓ Categoria detectada por rede neural: ${neuralMatch.categoria} (Score: ${neuralMatch.score.toFixed(3)})`);
       
-      let faqItem = null;
+      let faqItem: any = undefined;
       for (const cat in faq) {
-        faqItem = faq[cat].find(item => item.category === neuralMatch.categoria);
+        faqItem = faq[cat].find((item: any) => item.category === neuralMatch.categoria);
         if (faqItem) break;
       }
 

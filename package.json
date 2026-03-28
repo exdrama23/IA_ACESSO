@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"pnpm run dev:frontend\" \"pnpm run dev:backend\"",
-    "dev:frontend": "vite",
+    "dev:frontend": "pnpm --prefix frontend run dev",
     "dev:backend": "pnpm --prefix backend run dev",
     "build": "pnpm --prefix backend run build && pnpm --prefix frontend run build",
     "lint": "eslint .",

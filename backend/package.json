@@ -32,7 +32,7 @@
     "nodemailer": "^8.0.3",
     "onnxruntime-node": "^1.24.3",
     "pg": "^8.20.0",
-    "sharp": "^0.34.5",
+    "sharp": "^0.33.5",
     "string-similarity": "^4.0.4"
   },
   "devDependencies": {
@@ -42,6 +42,7 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.1.0",
+    "@types/natural": "^6.0.1",
     "@types/node": "^25.5.0",
     "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^7.0.11",

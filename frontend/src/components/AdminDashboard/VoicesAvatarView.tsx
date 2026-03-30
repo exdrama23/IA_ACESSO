@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Mic, User as UserIcon, Plus, Check, ShieldCheck, Trash2 } from 'lucide-react';
 import { Avatar3DPreview } from '../Avatar3D/Preview';
 import { useAppStore } from '../../store/useAppStore';
-import { API_URL } from '../../services/api';
 
 interface VoicesAvatarViewProps {
   config: any;

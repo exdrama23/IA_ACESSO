@@ -51,11 +51,24 @@ export function Login() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
       });
-      const data = await response.json();
-      if (response.ok) setView('code');
-      else setError(data.error || 'Erro ao enviar código');
-    } catch (err) { setError('Erro no servidor'); }
-    finally { setLoading(false); }
+      
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonErr) {
+        throw new Error('Resposta inválida do servidor');
+      }
+
+      if (response.ok) {
+        setView('code');
+      } else {
+        setError(data.error || data.details || 'Erro ao enviar código');
+      }
+    } catch (err: any) { 
+      setError(err.message === 'Failed to fetch' ? 'Erro de conexão com o servidor' : (err.message || 'Erro no servidor')); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const handleVerifyCode = (e: React.FormEvent) => {

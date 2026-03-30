@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Mail, Lock, EyeOff, Eye, ChevronLeft, ArrowRight, CheckCircle } from 'lucide-react';
 import BackgroundImage from '../assets/BackgroundLogin.png';
 import LogoAcesso from '../assets/LogoAcesso.png';
+import { API_URL } from '../services/api';
 
 type AuthView = 'login' | 'forgot' | 'code' | 'reset' | 'success';
 
 export function Login() {
-  
+
   const [view, setView] = useState<AuthView>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -19,10 +20,7 @@ export function Login() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const API_URL = import.meta.env.VITE_API_URL || '';
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async (e: React.FormEvent) => {    e.preventDefault();
     setLoading(true);
     setError('');
     try {

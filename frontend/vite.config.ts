@@ -29,6 +29,20 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/admin/': { // Adicionado barra no final para diferenciar da rota /admin do frontend
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/auth/': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      }
+    }
   },
   build: {
     sourcemap: false,

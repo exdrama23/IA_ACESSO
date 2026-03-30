@@ -4,13 +4,13 @@ export interface ChatResponse {
   source?: string;
 }
 
-// Troque pela URL que o Render te forneceu
-const API_BASE_URL = import.meta.env.PROD 
+// Configuração centralizada da URL da API
+export const API_URL = import.meta.env.PROD 
   ? "https://ia-acesso.onrender.com" 
-  : "http://localhost:3001";
+  : (import.meta.env.VITE_API_URL || "http://localhost:3001");
 
 export async function sendText(text: string): Promise<ChatResponse> {
-  const res = await fetch(`${API_BASE_URL}/api/chat`, {
+  const res = await fetch(`${API_URL}/api/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -31,7 +31,7 @@ export async function sendAudio(audioBlob: Blob): Promise<ChatResponse> {
   const formData = new FormData();
   formData.append("audio", audioBlob, "user_voice.webm");
 
-  const res = await fetch(`${API_BASE_URL}/api/chat`, {
+  const res = await fetch(`${API_URL}/api/chat`, {
     method: "POST",
     body: formData,
   });

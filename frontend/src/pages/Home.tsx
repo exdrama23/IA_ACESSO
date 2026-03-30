@@ -4,8 +4,8 @@ import { AudioButton } from "../components/AudioButton";
 import { StatusIndicator } from "../components/StatusIndicator";
 import { useChat } from "../hooks/useChat";
 import { useRobustHandTracking } from "../hooks/useRobustHandTracking";
-
 import { useAppStore } from "../store/useAppStore";
+import { API_URL } from '../services/api';
 
 const GESTURE_TOGGLE_COOLDOWN_MS = 700;
 
@@ -43,7 +43,6 @@ export default function Home() {
   const mediaStreamRef = useRef<MediaStream | null>(null);
 
   const { handleToggleChat } = useChat();
-  
   const handLandmarks = useAppStore((state) => state.handLandmarks);
   const isUserPresent = useAppStore((state) => state.isUserPresent);
   const isRecording = useAppStore((state) => state.isRecording);
@@ -55,7 +54,6 @@ export default function Home() {
         const token = localStorage.getItem('acessoia_token');
         if (!token) return;
 
-        const API_URL = import.meta.env.VITE_API_URL || '';
         const response = await fetch(`${API_URL}/admin/dashboard`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -234,8 +232,6 @@ export default function Home() {
       <Avatar3D />
       
       <StatusIndicator />
-
-      {}
 
       <div className="fixed bottom-6 right-6 z-50 w-56 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 shadow-xl backdrop-blur-sm">
         <video

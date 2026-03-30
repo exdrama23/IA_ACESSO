@@ -4,14 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node src/app.ts",
+    "start": "node dist/app.js",
     "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
     "build": "tsc"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.30.3",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.6.0",
@@ -37,7 +36,6 @@
     "string-similarity": "^4.0.4"
   },
   "devDependencies": {
-    "@prisma/adapter-pg": "^7.6.0",
     "@types/bcryptjs": "^3.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",

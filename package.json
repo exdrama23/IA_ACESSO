@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"pnpm run dev:frontend\" \"pnpm run dev:backend\"",
-    "dev:frontend": "pnpm --prefix frontend run dev",
-    "dev:backend": "pnpm --prefix backend run dev",
-    "build": "pnpm --prefix backend run build && pnpm --prefix frontend run build",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "npm run dev --prefix backend",
+    "build": "npm run build --prefix backend && npm run build --prefix frontend",
     "lint": "eslint .",
     "preview": "vite preview"
   },

@@ -16,6 +16,7 @@ import { NotificationsView } from '../components/AdminDashboard/NotificationsVie
 import { HelpDocumentationView } from '../components/AdminDashboard/HelpDocumentationView';
 import { VoicesAvatarView } from '../components/AdminDashboard/VoicesAvatarView';
 import { useAppStore } from '../store/useAppStore';
+import { API_URL } from '../services/api';
 
 type ViewType = 'dashboard' | 'user' | 'calendar' | 'metrics' | 'integrations' | 'database' | 'notifications' | 'help' | 'voices';
 
@@ -27,7 +28,6 @@ export function AdminConfig() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'historico' | 'config' | 'metricas'>('overview');
 
-  const API_URL = import.meta.env.VITE_API_URL || '';
   const token = localStorage.getItem('acessoia_token');
   const { setActiveVoiceId } = useAppStore();
 

@@ -113,7 +113,7 @@ export function HelpDocumentationView() {
             <div key={section.id} className="border border-gray-200 rounded-xl bg-white overflow-hidden shadow-sm transition-all">
               <button
                 onClick={() => setExpandedSection(isExpanded ? null : section.id)}
-                className={`w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors ${isExpanded ? 'bg-blue-50/30' : ''}`}
+                className={`w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer ${isExpanded ? 'bg-blue-50/30' : ''}`}
               >
                 <div className="flex items-center gap-3">
                   <div className={`p-2 rounded-lg ${isExpanded ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
@@ -161,9 +161,6 @@ export function HelpDocumentationView() {
             <h4 className="font-bold text-lg mb-1">Ainda precisa de ajuda?</h4>
             <p className="text-indigo-100 text-sm">Nosso time de engenharia está disponível para suporte técnico especializado.</p>
          </div>
-         <button className="px-6 py-2 bg-white text-indigo-600 rounded-lg font-bold text-sm hover:bg-indigo-50 transition-colors shadow-sm">
-            Abrir Ticket
-         </button>
       </div>
     </div>
   );

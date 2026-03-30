@@ -1,5 +1,5 @@
 import { ShieldCheck, Lock } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { API_URL } from '../../services/api';
 
 export function IntegrationsView() {
@@ -7,13 +7,32 @@ export function IntegrationsView() {
   const [verificationCode, setCode] = useState('');
   const [authToken, setAuthToken] = useState('');
   const [newKey, setNewKey] = useState('');
-
-  const [fallbacks] = useState([
-    { service: 'TTS (Text-to-Speech)', primary: 'ElevenLabs', fallback: 'Google Translate', status: 'ready' },
-    { service: 'Embeddings', primary: 'Gemini', fallback: 'TF-IDF Local', status: 'ready' },
-  ]);
+  const [config, setConfig] = useState<any>(null);
 
   const token = localStorage.getItem('acessoia_token');
+
+  useEffect(() => {
+    fetchConfig();
+  }, []);
+
+  const fetchConfig = async () => {
+    try {
+      const response = await fetch(`${API_URL}/admin/dashboard`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const result = await response.json();
+      if (result.status === 'ok') {
+        setConfig(result.config);
+      }
+    } catch (err) {
+      console.error('Error fetching config:', err);
+    }
+  };
+
+  const fallbacks = config ? [
+    { service: 'TTS (Text-to-Speech)', primary: config.tts.model === 'elevenlabs' ? 'ElevenLabs' : 'Google', fallback: 'Google Translate', status: 'ready' },
+    { service: 'Embeddings', primary: config.embedding.strategy === 'gemini' ? 'Gemini' : 'TF-IDF Local', fallback: 'TF-IDF Local', status: 'ready' },
+  ] : [];
 
   const requestVerification = async (service: string) => {
     try {
@@ -104,7 +123,7 @@ export function IntegrationsView() {
                 </div>
                 <button 
                   onClick={() => requestVerification(service)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium shadow-sm transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium shadow-sm transition-colors flex items-center gap-2 cursor-pointer"
                 >
                   <ShieldCheck className="w-4 h-4" /> Atualizar
                 </button>
@@ -163,7 +182,7 @@ export function IntegrationsView() {
                   </div>
                   <button 
                     onClick={() => requestVerification(`${srv.id}_backup_1`)}
-                    className="w-full py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2"
+                    className="w-full py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <ShieldCheck className="w-3.5 h-3.5" /> Configurar B1
                   </button>
@@ -177,7 +196,7 @@ export function IntegrationsView() {
                   </div>
                   <button 
                     onClick={() => requestVerification(`${srv.id}_backup_2`)}
-                    className="w-full py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2"
+                    className="w-full py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <ShieldCheck className="w-3.5 h-3.5" /> Configurar B2
                   </button>
@@ -221,9 +240,9 @@ export function IntegrationsView() {
                   value={verificationCode}
                   onChange={(e) => setCode(e.target.value)}
                   placeholder="000000"
-                  className="w-full text-center text-2xl font-mono py-3 border-2 rounded-xl focus:border-blue-500 outline-none transition-colors"
+                  className="w-full text-center text-2xl font-mono py-3 border-2 rounded-xl focus:border-blue-500 outline-none transition-colors cursor-pointer"
                 />
-                <button onClick={verifyCode} className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all">Verificar Código</button>
+                <button onClick={verifyCode} className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all cursor-pointer">Verificar Código</button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -231,12 +250,12 @@ export function IntegrationsView() {
                   value={newKey}
                   onChange={(e) => setNewKey(e.target.value)}
                   placeholder="Cole aqui a nova chave de API (Backup)..."
-                  className="w-full p-3 border-2 rounded-xl focus:border-blue-500 outline-none min-h-[100px] text-sm font-mono"
+                  className="w-full p-3 border-2 rounded-xl focus:border-blue-500 outline-none min-h-[100px] text-sm font-mono cursor-pointer"
                 />
-                <button onClick={saveNewKey} className="w-full py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-lg shadow-green-100 transition-all">Salvar Chave de Backup</button>
+                <button onClick={saveNewKey} className="w-full py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-lg shadow-green-100 transition-all cursor-pointer">Salvar Chave de Backup</button>
               </div>
             )}
-            <button onClick={() => setVerifyModal(null)} className="w-full mt-4 text-sm text-gray-400 hover:text-gray-600 transition-colors">Cancelar</button>
+            <button onClick={() => setVerifyModal(null)} className="w-full mt-4 text-sm text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">Cancelar</button>
           </div>
         </div>
       )}

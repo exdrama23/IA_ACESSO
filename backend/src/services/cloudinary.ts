@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
+import { trackAICall } from "../services/costTracker";
 
 dotenv.config();
 
@@ -46,6 +47,10 @@ export async function uploadAudioToCloudinary(
           reject(error);
         } else {
           console.log(`[CLOUDINARY] Sucesso: ${result?.public_id}`);
+          
+          
+          trackAICall('cloudinary', { type: 'audio_storage' }).catch(console.error);
+
           resolve({
             secure_url: result!.secure_url,
             public_id: result!.public_id,

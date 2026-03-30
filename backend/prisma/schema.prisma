@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,19 +6,16 @@ datasource db {
   provider = "postgresql"
 }
 
-// ============ MODELO: User (Admin/Usuários) ============
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
-  password  String   // Será hash bcrypt
+  password  String   
   name      String?
-  role      String   @default("user") // "admin" | "user"
+  role      String   @default("user") 
   
-  // Password Reset
   resetCode    String?
   resetExpires DateTime?
 
-  // Relacionamentos
   loginAttempts LoginAttempt[]
   auditLogs     AuditLog[]
   chatHistories ChatHistory[]
@@ -31,7 +25,6 @@ model User {
   notificationPreferences NotificationPreference?
   integrationKeys IntegrationKey[]
   
-  // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt 
 
@@ -39,7 +32,6 @@ model User {
   @@index([role])
 }
 
-// ============ MODELO: CalendarEvent (Calendário Administrativo) ============
 model CalendarEvent {
   id        String   @id @default(cuid())
   adminId   String
@@ -48,7 +40,7 @@ model CalendarEvent {
   date      DateTime
   title     String
   description String? @db.Text
-  color     String   // Hex color code (ex: #2563eb)
+  color     String   
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -57,13 +49,12 @@ model CalendarEvent {
   @@index([date])
 }
 
-// ============ MODELO: LoginAttempt (Segurança) ============
 model LoginAttempt {
   id        String   @id @default(cuid())
-  userId    String?  // null se tentativa falhou
+  userId    String?  
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  email     String   // Email tentado (mesmo que falhe)
+  email     String   
   success   Boolean  @default(false)
   ipAddress String?
   userAgent String?
@@ -75,16 +66,15 @@ model LoginAttempt {
   @@index([createdAt])
 }
 
-// ============ MODELO: AuditLog (Rastreamento de Ações) ============
 model AuditLog {
   id        String   @id @default(cuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   
-  action    String   // "login", "config_update", "chat", "logout"
-  resource  String?  // "config", "/api/chat", etc
-  changes   Json?    // O que mudou (ex: { strategy: "tfidf" -> "gemini" })
-  status    String   @default("success") // "success" | "failed" | "warning"
+  action    String   
+  resource  String?  
+  changes   Json?   
+  status    String   @default("success") 
   errorMsg  String?
   
   ipAddress String?
@@ -98,23 +88,20 @@ model AuditLog {
   @@index([resource])
 }
 
-// ============ MODELO: ChatHistory (Histórico de Conversa) ============
 model ChatHistory {
   id        String   @id @default(cuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   
-  sessionId String   // Agrupa conversas por sessão
-  question  String   @db.Text // Pergunta do usuário
-  answer    String   @db.Text // Resposta da IA
+  sessionId String   
+  question  String   @db.Text 
+  answer    String   @db.Text 
+
+  source    String   
+  confidence Float  @default(0.0) 
+  audioUrl  String?  
   
-  // Metadata da resposta
-  source    String   // "FAQ" | "CACHE_SEMANTICO" | "GEMINI" | "FALLBACK"
-  confidence Float  @default(0.0) // Score de confiança 0-1
-  audioUrl  String?  // URL do Cloudinary
-  
-  // Embeddings para comparação (JSON)
-  embedding String? @db.Text // JSON string do vetor semântico
+  embedding String? @db.Text 
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt 
@@ -125,23 +112,20 @@ model ChatHistory {
   @@index([source])
 }
 
-// ============ MODELO: ApiCall (Rastreamento de API) ============
 model ApiCall {
   id        String   @id @default(cuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   
-  endpoint  String   // "/api/chat", "/config", etc
-  method    String   // "GET", "POST", etc
-  status    Int      // 200, 400, 500, etc
-  
-  // Performance
-  duration  Int      // milliseconds
-  
-  // Metadata
-  requestBody  Json?     // Dados enviados (sem senhas)
-  responseBody Json?     // Resposta (sem dados sensíveis)
-  error        String?   // Mensagem de erro, se houver
+  endpoint  String   
+  method    String   
+  status    Int     
+
+  duration  Int     
+
+  requestBody  Json?     
+  responseBody Json?     
+  error        String?   
   
   ipAddress String?
   userAgent String?
@@ -155,27 +139,21 @@ model ApiCall {
   @@index([createdAt])
 }
 
-// ============ MODELO: SystemConfig (Armazenar Configs no DB) ============
 model SystemConfig {
   id        String   @id @default("current")
   
-  // Estratégia de embeddings
-  embeddingStrategy String @default("tfidf") // "tfidf" | "gemini" | "hybrid"
+  embeddingStrategy String @default("tfidf") 
   tfidfThreshold    Float  @default(0.75)
   geminiThreshold   Float  @default(0.85)
-  
-  // TTS
+
   ttsModel  String   @default("elevenlabs")
   
-  // Storage
   audioStorage String @default("cloudinary")
-  audioTtl  Int      @default(259200) // 3 dias em segundos
-  
-  // Limites
+  audioTtl  Int      @default(259200)
+
   maxAudioPerSession Int @default(100)
   maxRequestSizeMb   Int @default(10)
-  
-  // Metadata
+
   modifiedBy String?
   version    Int      @default(1)
   
@@ -183,33 +161,30 @@ model SystemConfig {
   updatedAt DateTime @updatedAt
 }
 
-// ============ MODELO: ApiUsage (Rastreamento de Custos) ============
 model ApiUsage {
   id        String   @id @default(cuid())
   
-  service   String   // "gemini" | "elevenlabs" | "cloudinary"
-  tokens    Int?     // Para Gemini
-  characters Int?    // Para ElevenLabs
-  requests  Int      @default(1) // Número de requisições
+  service   String   
+  tokens    Int?     
+  characters Int?   
+  requests  Int      @default(1) 
   
-  // Custo estimado
   estimatedCost Float @default(0.0)
   
   createdAt DateTime @default(now())
-  date      DateTime @default(now()) // Data agregada
+  date      DateTime @default(now()) 
   
   @@index([service])
   @@index([date])
   @@unique([service, date], name: "service_date")
 }
 
-// ============ MODELO: Notification (Notificações de Sistema) ============
 model Notification {
   id        String   @id @default(cuid())
   adminId   String
   admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
   
-  type      String   // "error" | "warning" | "success" | "info"
+  type      String   
   title     String
   message   String   @db.Text
   read      Boolean  @default(false)
@@ -222,7 +197,6 @@ model Notification {
   @@index([createdAt])
 }
 
-// ============ MODELO: NotificationPreference (Preferências de Admin) ============
 model NotificationPreference {
   id        String   @id @default(cuid())
   adminId   String   @unique
@@ -236,14 +210,13 @@ model NotificationPreference {
   updatedAt DateTime @updatedAt
 }
 
-// ============ MODELO: IntegrationKey (Segurança de Chaves) ============
 model IntegrationKey {
   id           String   @id @default(cuid())
   adminId      String
   admin        User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
   
-  service      String   // "gemini" | "elevenlabs" | "cloudinary"
-  encryptedKey String   // Hash ou Encriptação
+  service      String  
+  encryptedKey String   
   isActive     Boolean  @default(true)
   
   lastVerified DateTime?

@@ -115,7 +115,7 @@ export function DatabaseVisualizerView() {
               <li key={table}>
                 <button 
                   onClick={() => setSelectedTable(table)}
-                  className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-left transition-all group ${
+                  className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-left transition-all group cursor-pointer ${
                     table === selectedTable 
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-100 font-bold' 
                       : 'hover:bg-white hover:shadow-sm text-gray-500 font-medium'
@@ -135,18 +135,18 @@ export function DatabaseVisualizerView() {
         <div className="flex items-center justify-between p-3 border-b border-gray-100 flex-shrink-0">
           <div className="flex items-center gap-2">
             <div className="flex border border-gray-100 rounded-lg p-0.5 bg-gray-50/50">
-              <button className="p-1.5 hover:bg-white hover:shadow-sm rounded-md text-gray-400 transition-all"><LayoutPanelLeft className="w-4 h-4" /></button>
-              <button className="p-1.5 bg-white shadow-sm rounded-md text-blue-600"><Grid className="w-4 h-4" /></button>
-              <button className="p-1.5 hover:bg-white hover:shadow-sm rounded-md text-gray-400 transition-all"><Layers className="w-4 h-4" /></button>
+              <button className="p-1.5 hover:bg-white hover:shadow-sm rounded-md text-gray-400 transition-all cursor-pointer"><LayoutPanelLeft className="w-4 h-4" /></button>
+              <button className="p-1.5 bg-white shadow-sm rounded-md text-blue-600 cursor-pointer"><Grid className="w-4 h-4" /></button>
+              <button className="p-1.5 hover:bg-white hover:shadow-sm rounded-md text-gray-400 transition-all cursor-pointer"><Layers className="w-4 h-4" /></button>
             </div>
 
             <div className="h-6 w-px bg-gray-100 mx-2"></div>
 
-            <button className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 font-bold text-gray-600 transition-all text-xs">
+            <button className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 font-bold text-gray-600 transition-all text-xs cursor-pointer">
               <Filter className="w-3.5 h-3.5 text-gray-400" /> Filtros
             </button>
             
-            <button className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 font-bold text-gray-600 transition-all text-xs">
+            <button className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 font-bold text-gray-600 transition-all text-xs cursor-pointer">
               <Columns className="w-3.5 h-3.5 text-gray-400" /> Colunas
             </button>
           </div>
@@ -168,7 +168,7 @@ export function DatabaseVisualizerView() {
               <button 
                 onClick={handlePrevPage}
                 disabled={pagination.page <= 1 || loading}
-                className="p-1.5 hover:bg-white disabled:opacity-30 text-gray-500 transition-all"
+                className="p-1.5 hover:bg-white disabled:opacity-30 text-gray-500 transition-all cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -176,7 +176,7 @@ export function DatabaseVisualizerView() {
               <button 
                 onClick={handleNextPage}
                 disabled={pagination.page >= pagination.totalPages || loading}
-                className="p-1.5 hover:bg-white disabled:opacity-30 text-gray-500 transition-all"
+                className="p-1.5 hover:bg-white disabled:opacity-30 text-gray-500 transition-all cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -184,7 +184,7 @@ export function DatabaseVisualizerView() {
 
             <button 
               onClick={handleRefresh}
-              className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-500 transition-all"
+              className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-500 transition-all cursor-pointer"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -207,7 +207,7 @@ export function DatabaseVisualizerView() {
               <thead className="sticky top-0 bg-white z-10">
                 <tr>
                   <th className="w-10 px-4 py-3 border-b border-r border-gray-100 bg-gray-50/50">
-                    <input type="checkbox" className="rounded-md border-gray-300 text-blue-600 focus:ring-blue-500" />
+                    <input type="checkbox" className="rounded-md border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
                   </th>
                   {columns.map((col) => (
                     <th key={col} className="px-4 py-3 border-b border-r border-gray-100 font-black text-[10px] uppercase tracking-widest text-gray-400 bg-gray-50/50 group hover:bg-gray-100 cursor-pointer transition-colors">
@@ -226,7 +226,7 @@ export function DatabaseVisualizerView() {
                 {tableData.map((row, index) => (
                   <tr key={row.id || index} className="group hover:bg-blue-50/30 transition-colors">
                     <td className="px-4 py-2.5 border-b border-r border-gray-50 text-center">
-                      <input type="checkbox" className="rounded-md border-gray-300 text-blue-600 focus:ring-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <input type="checkbox" className="rounded-md border-gray-300 text-blue-600 focus:ring-blue-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" />
                     </td>
                     {columns.map((col) => {
                       const val = row[col];

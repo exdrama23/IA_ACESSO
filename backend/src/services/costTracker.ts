@@ -16,6 +16,7 @@ const COSTS = {
   GEMINI_TOKEN: 0.000000125, 
   ELEVENLABS_CHAR: 0.0000003, 
   CLOUDINARY_REQ: 0.00001,
+  GOOGLE_TTS_CHAR: 0.000004,
 };
 
 export async function trackAICall(service: AIService, data: { tokens?: number, characters?: number, type: string }) {
@@ -23,17 +24,21 @@ export async function trackAICall(service: AIService, data: { tokens?: number, c
     let cost = 0;
     if (service === 'gemini' && data.tokens) cost = data.tokens * COSTS.GEMINI_TOKEN;
     if (service === 'elevenlabs' && data.characters) cost = data.characters * COSTS.ELEVENLABS_CHAR;
+    if (service === 'google-tts' && data.characters) cost = data.characters * COSTS.GOOGLE_TTS_CHAR;
     if (service === 'cloudinary') cost = COSTS.CLOUDINARY_REQ;
 
-    const today = new Date();
-    today.setHours(0,0,0,0);
+    // Granularidade horária para gráficos de 24h
+    const now = new Date();
+    const hourStart = new Date(now);
+    hourStart.setMinutes(0, 0, 0);
 
     try {
+      // Upsert por HORA para permitir visão detalhada de 24h
       await prisma.apiUsage.upsert({
         where: {
           service_date: {
             service,
-            date: today
+            date: hourStart
           }
         },
         update: {
@@ -44,13 +49,25 @@ export async function trackAICall(service: AIService, data: { tokens?: number, c
         },
         create: {
           service,
-          date: today,
+          date: hourStart,
           tokens: data.tokens || 0,
           characters: data.characters || 0,
           requests: 1,
           estimatedCost: cost
         }
       });
+
+      await prisma.apiCall.create({
+        data: {
+          endpoint: service,
+          method: data.type,
+          status: 200,
+          duration: 0, 
+          requestBody: data as any,
+          responseBody: { cost } as any
+        }
+      });
+
     } catch (dbErr) {
       console.error('[PRISMA] Erro custo:', dbErr);
     }

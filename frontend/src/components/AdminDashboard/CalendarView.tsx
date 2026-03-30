@@ -12,8 +12,9 @@ const COLORS = [
 ];
 
 export function CalendarView() {
-  const [currentYear, setCurrentYear] = useState(2026);
-  const [currentMonth, setCurrentMonth] = useState(2); 
+  const now = new Date();
+  const [currentYear, setCurrentYear] = useState(now.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(now.getMonth()); 
   const [events, setEvents] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -125,7 +126,7 @@ export function CalendarView() {
                 setCurrentMonth(currentMonth - 1);
               }
             }}
-            className="px-3 py-1.5 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            className="px-3 py-1.5 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 cursor-pointer"
           >
             Anterior
           </button>
@@ -143,7 +144,7 @@ export function CalendarView() {
                 setCurrentMonth(currentMonth + 1);
               }
             }}
-            className="px-3 py-1.5 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            className="px-3 py-1.5 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 cursor-pointer"
           >
             Próximo
           </button>
@@ -156,7 +157,7 @@ export function CalendarView() {
             onChange={(e) => setCurrentYear(parseInt(e.target.value))}
             min="2026"
             max="2031"
-            className="w-24 px-3 py-1.5 border border-gray-300 rounded-md text-sm outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-24 px-3 py-1.5 border border-gray-300 rounded-md text-sm outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
           />
         </div>
       </div>
@@ -192,7 +193,7 @@ export function CalendarView() {
                   {dayEvents.slice(0, 2).map((event, idx) => (
                     <div 
                       key={idx}
-                      className="text-[10px] p-1 rounded truncate text-white font-medium"
+                      className="text-[10px] p-1 rounded truncate text-white font-medium cursor-pointer"
                       style={{ backgroundColor: event.color }}
                     >
                       {event.title}
@@ -245,7 +246,7 @@ export function CalendarView() {
                     <button
                       key={color.value}
                       onClick={() => setFormData({ ...formData, color: color.value })}
-                      className={`w-8 h-8 rounded-full border-2 transition-all ${formData.color === color.value ? 'border-gray-900 scale-110 shadow-md' : 'border-transparent'}`}
+                      className={`w-8 h-8 rounded-full border-2 transition-all cursor-pointer ${formData.color === color.value ? 'border-gray-900 scale-110 shadow-md' : 'border-transparent'}`}
                       style={{ backgroundColor: color.value }}
                       title={color.name}
                     />
@@ -257,13 +258,13 @@ export function CalendarView() {
             <div className="flex gap-3 mt-8">
               <button 
                 onClick={() => setShowModal(false)}
-                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer"
               >
                 Cancelar
               </button>
               <button 
                 onClick={handleSave}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 shadow-sm"
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 shadow-sm cursor-pointer"
               >
                 {editingEvent ? 'Atualizar Evento' : 'Salvar Evento'}
               </button>
@@ -280,7 +281,7 @@ export function CalendarView() {
           events.slice(0, 5).map((event, idx) => (
             <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
-                <div className="flex-1" onClick={() => handleEditClick(event)}>
+                <div className="flex-1 cursor-pointer" onClick={() => handleEditClick(event)}>
                   <div className="flex items-center gap-2 mb-1 cursor-pointer">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: event.color }}></div>
                     <h4 className="font-semibold text-gray-900">{event.title}</h4>
@@ -290,9 +291,9 @@ export function CalendarView() {
                 </div>
                 <button 
                   onClick={() => deleteEvent(event.id)}
-                  className="p-2 hover:bg-red-50 rounded-md transition-colors"
+                  className="p-2 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
                 >
-                  <Trash2 className="w-4 h-4 text-red-400 hover:text-red-600" />
+                  <Trash2 className="w-4 h-4 text-red-400 hover:text-red-600 cursor-pointer" />
                 </button>
               </div>
             </div>

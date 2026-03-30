@@ -1,6 +1,7 @@
 import axios from "axios";
 import { getConfig } from "../config/settings";
 import { uploadAudioToCloudinary } from "../services/cloudinary";
+import { trackAICall } from "../services/costTracker";
 
 export async function gerarAudio(texto: string): Promise<string> {
   const config = await getConfig();
@@ -31,6 +32,11 @@ export async function gerarAudio(texto: string): Promise<string> {
       audioBuffer = Buffer.from(response.data);
       console.log("[ELEVENLABS] Áudio gerado com sucesso");
       
+      await trackAICall('elevenlabs', { 
+        characters: texto.length, 
+        type: 'tts_generation' 
+      });
+      
     } catch (error: any) {
       console.error("[ELEVENLABS] Erro na API, tentando fallback do Google...");
     }
@@ -48,6 +54,11 @@ export async function gerarAudio(texto: string): Promise<string> {
       
       audioBuffer = Buffer.from(response.data);
       console.log("[TTS] Áudio gerado via Google Fallback");
+
+      await trackAICall('google-tts', { 
+        characters: Math.min(texto.length, 200), 
+        type: 'tts_fallback' 
+      });
     } catch (e: any) {
       console.error(`[TTS] Erro fatal no fallback:`, e.message);
       return "";

@@ -94,7 +94,7 @@ export function VoicesAvatarView({ config, onUpdateConfig, saving }: VoicesAvata
                   value={newVoiceId}
                   onChange={(e) => setNewVoiceId(e.target.value)}
                   placeholder="Ex: 21m00Tcm4Tlv..."
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 outline-none"
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 outline-none cursor-pointer"
                 />
               </div>
               <div className="space-y-1.5">
@@ -104,13 +104,13 @@ export function VoicesAvatarView({ config, onUpdateConfig, saving }: VoicesAvata
                   value={newVoiceName}
                   onChange={(e) => setNewVoiceName(e.target.value)}
                   placeholder="Ex: Eduarda (Oficial)"
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 outline-none"
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 outline-none cursor-pointer"
                 />
               </div>
               <div className="flex items-end">
                 <button 
                   onClick={handleAddVoice}
-                  className="w-full h-9.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-md shadow-blue-100"
+                  className="w-full h-9.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-md shadow-blue-100 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" /> Adicionar à Lista
                 </button>
@@ -125,7 +125,7 @@ export function VoicesAvatarView({ config, onUpdateConfig, saving }: VoicesAvata
                 <select 
                   value={selectedVoiceId}
                   onChange={(e) => setPendingVoiceId(e.target.value)}
-                  className="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
                 >
                   {voices.map((voice: any) => (
                     <option key={voice.id} value={voice.id}>{voice.name} ({voice.id})</option>
@@ -136,7 +136,7 @@ export function VoicesAvatarView({ config, onUpdateConfig, saving }: VoicesAvata
               <button 
                 onClick={handleConfirmChange}
                 disabled={saving || selectedVoiceId === currentVoiceId}
-                className="px-8 bg-gray-900 text-white rounded-xl text-sm font-bold hover:bg-black disabled:opacity-50 disabled:grayscale transition-all flex items-center gap-2 shadow-lg"
+                className="px-8 bg-gray-900 text-white rounded-xl text-sm font-bold hover:bg-black disabled:opacity-50 disabled:grayscale transition-all flex items-center gap-2 shadow-lg cursor-pointer"
               >
                 {saving ? 'Salvando...' : selectedVoiceId === currentVoiceId ? <><Check className="w-4 h-4" /> Voz Atual</> : 'Confirmar Alteração'}
               </button>
@@ -160,7 +160,7 @@ export function VoicesAvatarView({ config, onUpdateConfig, saving }: VoicesAvata
                     {voice.id !== '21m00Tcm4TlvDq8ikWAM' && (
                       <button 
                         onClick={() => handleRemoveVoice(voice.id)}
-                        className="p-2 text-gray-300 hover:text-red-500 transition-colors"
+                        className="p-2 text-gray-300 hover:text-red-500 transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -207,7 +207,7 @@ export function VoicesAvatarView({ config, onUpdateConfig, saving }: VoicesAvata
       </div>
 
       <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl flex gap-3">
-        <div className="p-2 bg-white rounded-lg text-amber-600 h-fit shadow-sm"><ShieldCheck className="w-4 h-4" /></div>
+        <div className="p-2 bg-white rounded-lg text-amber-600 h-fit shadow-sm cursor-pointer"><ShieldCheck className="w-4 h-4" /></div>
         <div>
           <p className="text-xs font-bold text-amber-900 mb-1">Informação Técnica</p>
           <p className="text-[10px] text-amber-700 leading-relaxed">

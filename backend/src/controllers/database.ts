@@ -3,7 +3,7 @@ import { prisma } from '../lib/prisma';
 
 export async function getTables(req: Request, res: Response) {
   try {
-    // Lista de tabelas baseada no schema.prisma
+
     const tables = [
       'User',
       'CalendarEvent',

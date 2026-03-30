@@ -120,7 +120,7 @@ export function DashboardOverview({ config, configHistory, chatHistory, onSaveCo
               <select 
                 value={filterSource}
                 onChange={(e) => setFilterSource(e.target.value)}
-                className="bg-transparent text-xs font-bold text-gray-600 outline-none pr-4"
+                className="bg-transparent text-xs font-bold text-gray-600 outline-none pr-4 cursor-pointer"
               >
                 <option value="all">Todas as Origens</option>
                 <option value="IA">IA (Gemini)</option>
@@ -135,7 +135,7 @@ export function DashboardOverview({ config, configHistory, chatHistory, onSaveCo
               <select 
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="bg-transparent text-xs font-bold text-gray-600 outline-none pr-4"
+                className="bg-transparent text-xs font-bold text-gray-600 outline-none pr-4 cursor-pointer"
               >
                 <option value="all">Todas Categorias</option>
                 {FAQ_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
@@ -180,7 +180,7 @@ export function DashboardOverview({ config, configHistory, chatHistory, onSaveCo
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 text-xs font-bold text-gray-500 bg-white border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="px-3 py-1 text-xs font-bold text-gray-500 bg-white border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
                 >
                   Anterior
                 </button>
@@ -189,7 +189,7 @@ export function DashboardOverview({ config, configHistory, chatHistory, onSaveCo
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`w-7 h-7 text-[10px] font-black rounded-md transition-all ${
+                      className={`w-7 h-7 text-[10px] font-black rounded-md transition-all cursor-pointer ${
                         currentPage === page 
                         ? 'bg-blue-600 text-white shadow-sm' 
                         : 'text-gray-400 hover:bg-gray-100'
@@ -202,7 +202,7 @@ export function DashboardOverview({ config, configHistory, chatHistory, onSaveCo
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1 text-xs font-bold text-gray-500 bg-white border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="px-3 py-1 text-xs font-bold text-gray-500 bg-white border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
                 >
                   Próxima
                 </button>
@@ -214,7 +214,7 @@ export function DashboardOverview({ config, configHistory, chatHistory, onSaveCo
             <p className="text-sm text-gray-400 italic">Nenhum resultado encontrado para os filtros aplicados.</p>
             <button 
               onClick={() => { setSearchTerm(''); setFilterSource('all'); setFilterCategory('all'); }}
-              className="mt-4 text-blue-600 text-xs font-bold hover:underline"
+              className="mt-4 text-blue-600 text-xs font-bold hover:underline cursor-pointer"
             >
               Limpar todos os filtros
             </button>
@@ -231,7 +231,7 @@ export function DashboardOverview({ config, configHistory, chatHistory, onSaveCo
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-blue-600 text-white">
               <h3 className="text-xl font-bold">Guia do Motor Semântico</h3>
-              <button onClick={() => setShowDoc(false)} className="p-1 hover:bg-white/20 rounded-lg transition-colors text-white">
+              <button onClick={() => setShowDoc(false)} className="p-1 hover:bg-white/20 rounded-lg transition-colors text-white cursor-pointer">
                  X
               </button>
             </div>
@@ -284,7 +284,7 @@ export function DashboardOverview({ config, configHistory, chatHistory, onSaveCo
             <div className="p-4 bg-gray-50 border-t border-gray-100 text-right">
               <button 
                 onClick={() => setShowDoc(false)}
-                className="px-6 py-2 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors"
+                className="px-6 py-2 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors cursor-pointer"
               >
                 Entendido
               </button>
@@ -315,7 +315,7 @@ export function DashboardOverview({ config, configHistory, chatHistory, onSaveCo
             <span>Modificado em {new Date(config.metadata.last_updated).toLocaleDateString()} • ID: {config.metadata.version}</span>
             <button 
               onClick={() => setShowDoc(true)}
-              className="text-blue-600 hover:underline font-medium"
+              className="text-blue-600 hover:underline font-medium cursor-pointer"
             >
               Ver documentação
             </button>
@@ -323,11 +323,11 @@ export function DashboardOverview({ config, configHistory, chatHistory, onSaveCo
         </div>
 
         <div className="flex items-center justify-between gap-4 p-4 bg-gray-50 border-t border-gray-100">
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1 max-sm">
             <select 
               value={strategy}
               onChange={(e) => setStrategy(e.target.value)}
-              className="w-full pl-3 pr-8 py-2 text-sm bg-white border border-gray-300 rounded-md outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 appearance-none shadow-sm"
+              className="w-full pl-3 pr-8 py-2 text-sm bg-white border border-gray-300 rounded-md outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 appearance-none shadow-sm cursor-pointer"
             >
               <option value="tfidf">TF-IDF Local (Gratuito, Rápido)</option>
               <option value="gemini">Gemini Embeddings (Preciso, Pago)</option>
@@ -339,13 +339,13 @@ export function DashboardOverview({ config, configHistory, chatHistory, onSaveCo
           </div>
           
           <div className="flex gap-2">
-            <button className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 shadow-sm">
+            <button className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 shadow-sm cursor-pointer">
               Cancelar
             </button>
             <button 
               onClick={handleSave}
               disabled={saving}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 shadow-sm disabled:opacity-70 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 shadow-sm disabled:opacity-70 transition-colors cursor-pointer"
             >
               {saving ? 'Atualizando...' : 'Salvar Alteração'}
             </button>

@@ -36,7 +36,7 @@
     "string-similarity": "^4.0.4"
   },
   "devDependencies": {
-    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/adapter-pg": "^7.6.0",
     "@types/bcryptjs": "^3.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",

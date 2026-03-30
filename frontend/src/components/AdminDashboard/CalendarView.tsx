@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
+import { API_URL } from '../../services/api';
 
 const COLORS = [
   { name: 'Vermelho', value: '#dc2626' },
@@ -19,7 +20,6 @@ export function CalendarView() {
   const [formData, setFormData] = useState({ title: '', description: '', color: '#2563eb' });
   const [editingEvent, setEditingEvent] = useState<any>(null);
 
-  const API_URL = import.meta.env.VITE_API_URL || '';
   const token = localStorage.getItem('acessoia_token');
 
   useEffect(() => {

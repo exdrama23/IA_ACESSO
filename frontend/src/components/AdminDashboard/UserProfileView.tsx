@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { API_URL } from '../../services/api';
 
 export function UserProfileView() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const API_URL = import.meta.env.VITE_API_URL || '';
   const token = localStorage.getItem('acessoia_token');
 
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { ShieldCheck, Lock } from 'lucide-react';
 import { useState } from 'react';
+import { API_URL } from '../../services/api';
 
 export function IntegrationsView() {
   const [verifyModal, setVerifyModal] = useState<{service: string, step: 'code' | 'edit'} | null>(null);
@@ -12,7 +13,6 @@ export function IntegrationsView() {
     { service: 'Embeddings', primary: 'Gemini', fallback: 'TF-IDF Local', status: 'ready' },
   ]);
 
-  const API_URL = import.meta.env.VITE_API_URL || '';
   const token = localStorage.getItem('acessoia_token');
 
   const requestVerification = async (service: string) => {

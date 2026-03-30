@@ -2,6 +2,7 @@ import { AlertCircle, CheckCircle2, AlertTriangle, Info, X } from 'lucide-react'
 import { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { API_URL } from '../../services/api';
 
 type NotificationType = 'error' | 'warning' | 'success' | 'info';
 
@@ -22,7 +23,6 @@ export function NotificationsView() {
   });
   const [filter, setFilter] = useState<'all' | 'error' | 'warning' | 'success' | 'info'>('all');
 
-  const API_URL = import.meta.env.VITE_API_URL || '';
   const token = localStorage.getItem('acessoia_token');
 
   useEffect(() => {

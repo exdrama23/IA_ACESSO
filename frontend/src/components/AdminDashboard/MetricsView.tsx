@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import { API_URL } from '../../services/api';
 
 export function MetricsView() {
   const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('day');
   const [detailedData, setDetailedData] = useState<any[]>([]);
   const [realKpis, setRealKpis] = useState<any>(null);
 
-  const API_URL = import.meta.env.VITE_API_URL || '';
   const token = localStorage.getItem('acessoia_token');
 
   useEffect(() => {

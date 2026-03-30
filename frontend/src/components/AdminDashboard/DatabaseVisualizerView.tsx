@@ -4,6 +4,7 @@ import {
   Grid, Layers, Table2, ChevronsUpDown, Filter, Columns,
   Database
 } from 'lucide-react';
+import { API_URL } from '../../services/api';
 
 export function DatabaseVisualizerView() {
   const [tables, setTables] = useState<string[]>([]);
@@ -18,7 +19,6 @@ export function DatabaseVisualizerView() {
     totalPages: 0
   });
 
-  const API_URL = import.meta.env.VITE_API_URL || '';
   const token = localStorage.getItem('acessoia_token');
 
   const fetchTables = useCallback(async () => {
@@ -36,7 +36,7 @@ export function DatabaseVisualizerView() {
     } catch (err) {
       console.error('Erro ao buscar tabelas:', err);
     }
-  }, [API_URL, token, selectedTable]);
+  }, [token, selectedTable]);
 
   const fetchTableData = useCallback(async (tableName: string, page: number = 1) => {
     setLoading(true);
@@ -54,7 +54,7 @@ export function DatabaseVisualizerView() {
     } finally {
       setLoading(false);
     }
-  }, [API_URL, token, pagination.limit]);
+  }, [token, pagination.limit]);
 
   useEffect(() => {
     fetchTables();

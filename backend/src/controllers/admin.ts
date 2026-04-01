@@ -7,6 +7,13 @@ import { resetGeminiState } from '../ai/gemini';
 import { resetOpenAIState } from '../ai/openai';
 import { prisma } from '../lib/prisma';
 
+// 🔴 DESABILITAR TEMPORARIAMENTE: Troque para false para desativar envio de emails de verificação
+const ENABLE_EMAIL_VERIFICATION = false;
+
+// 🔴 SKIP VERIFICAÇÃO: Troque para false para EXIGIR código de verificação
+// Se true: usuário pode salvar chave sem digite código
+const SKIP_VERIFICATION = true;
+
 export async function getUserProfile(req: Request, res: Response) {
   try {
     const userId = (req as any).user?.id;
@@ -153,18 +160,32 @@ export async function requestIntegrationChange(req: Request, res: Response) {
       ex: 900
     });
 
+    // SE SKIP_VERIFICATION = true: libera direto sem verificação
+    if (SKIP_VERIFICATION) {
+      const authToken = Math.random().toString(36).substring(7);
+      await redis.set(`integration:authorized:${user.id}:${service}`, authToken, {
+        ex: 300
+      });
+      console.log(`[INTEGRATION] 🚀 MODO DEV: Verificação saltada. Token autorizado direto!`);
+      return res.json({ status: 'ok', authToken, message: 'Autorizado para configurar (modo dev)' });
+    }
+
     // Enviar email com código de verificação
-    try {
-      await sendIntegrationVerificationEmail(
-        user.email,
-        code,
-        service,
-        user.name
-      );
-      console.log(`[INTEGRATION] Código de verificação enviado para ${user.email}`);
-    } catch (emailError) {
-      console.error('[INTEGRATION] Erro ao enviar email:', emailError);
-      return res.status(500).json({ error: 'Falha ao enviar código de verificação por email' });
+    if (ENABLE_EMAIL_VERIFICATION) {
+      try {
+        await sendIntegrationVerificationEmail(
+          user.email,
+          code,
+          service,
+          user.name
+        );
+        console.log(`[INTEGRATION] Código de verificação enviado para ${user.email}`);
+      } catch (emailError) {
+        console.error('[INTEGRATION] Erro ao enviar email:', emailError);
+        return res.status(500).json({ error: 'Falha ao enviar código de verificação por email' });
+      }
+    } else {
+      console.log(`[INTEGRATION] 🚀 MODO DEV: Email desabilitado. Código: ${code}`);
     }
 
     res.json({ status: 'ok', message: 'Código enviado para o e-mail cadastrado' });

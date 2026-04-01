@@ -28,7 +28,7 @@ import {
   deleteNotification
 } from "./controllers/admin";
 import { getMetrics, getAuditLogs } from "./controllers/metrics";
-import { login, logout, forgotPassword, resetPassword } from "./controllers/auth";
+import { login, logout, forgotPassword, resetPassword, changePassword } from "./controllers/auth";
 import { verifyToken, requireAdmin } from "./middleware/auth";
 import { createRateLimiter } from "./middleware/rateLimit";
 import { errorHandler } from "./middleware/errorHandler";
@@ -59,6 +59,7 @@ app.get("/health", healthCheck);
 app.post("/auth/login", createRateLimiter({ windowMs: 900000, maxRequests: 10 }), login);
 app.post("/auth/forgot-password", createRateLimiter({ windowMs: 900000, maxRequests: 5 }), forgotPassword);
 app.post("/auth/reset-password", createRateLimiter({ windowMs: 900000, maxRequests: 5 }), resetPassword);
+app.post("/auth/change-password", verifyToken, createRateLimiter({ windowMs: 900000, maxRequests: 5 }), changePassword);
 
 app.post("/api/chat", 
   (req, res, next) => {

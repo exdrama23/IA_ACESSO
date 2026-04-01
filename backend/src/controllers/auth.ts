@@ -5,6 +5,9 @@ import { redis } from '../cache/redis';
 import { prisma } from '../lib/prisma';
 import { sendPasswordResetEmailWithName } from '../services/email';
 
+// 🔴 DESABILITAR TEMPORARIAMENTE: Troque para false para desativar envio de emails de reset
+const ENABLE_EMAIL_VERIFICATION = false;
+
 export async function login(req: Request, res: Response) {
   try {
     const { email, password } = req.body;
@@ -134,7 +137,13 @@ export async function forgotPassword(req: Request, res: Response) {
     const resetKey = `password_reset:${email.toLowerCase()}`;
     await redis.set(resetKey, code, { ex: 15 * 60 });
 
-    await sendPasswordResetEmailWithName(email, code, user.name);
+    // Enviar email de reset
+    if (ENABLE_EMAIL_VERIFICATION) {
+      await sendPasswordResetEmailWithName(email, code, user.name);
+      console.log(`[AUTH] Código enviado para ${email}`);
+    } else {
+      console.log(`[AUTH] 🚀 MODO DEV: Email desabilitado. Código: ${code}`);
+    }
 
     res.json({ status: 'ok', message: 'Código enviado com sucesso' });
   } catch (error) {
@@ -190,5 +199,54 @@ export async function resetPassword(req: Request, res: Response) {
   } catch (error) {
     console.error('[AUTH] Erro reset-password:', error);
     res.status(500).json({ error: 'Erro ao redefinir senha' });
+  }
+}
+
+export async function changePassword(req: Request, res: Response) {
+  try {
+    const user = (req as any).user;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!user) {
+      return res.status(401).json({ error: 'Não autenticado' });
+    }
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Senha atual e nova senha são obrigatórias' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'Nova senha deve ter pelo menos 8 caracteres' });
+    }
+
+    // Buscar usuário no banco
+    const userRecord = await prisma.user.findUnique({
+      where: { id: user.id }
+    });
+
+    if (!userRecord) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Verificar senha atual
+    const isPasswordValid = await bcrypt.compare(currentPassword, userRecord.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Senha atual incorreta' });
+    }
+
+    // Criptografar nova senha
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Atualizar senha no banco
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword }
+    });
+
+    console.log(`[AUTH] Senha alterada com sucesso para: ${userRecord.email}`);
+    res.json({ status: 'ok', message: 'Senha alterada com sucesso' });
+  } catch (error) {
+    console.error('[AUTH] Erro ao alterar senha:', error);
+    res.status(500).json({ error: 'Erro ao alterar senha' });
   }
 }

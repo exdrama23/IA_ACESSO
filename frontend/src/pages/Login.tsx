@@ -132,20 +132,22 @@ export function Login() {
                   <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Senha" className="w-full pl-10 pr-10 py-3 bg-white rounded-lg text-sm text-gray-800 outline-none focus:ring-2 focus:ring-[#ce0a53]/50" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">{showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}</button>
                 </div>
-                <button type="submit" disabled={loading} className="w-full bg-[#cc0d55] hover:bg-[#a60a44] text-white rounded-lg py-3 text-sm font-bold transition-all disabled:opacity-70 flex justify-center">
+                <button type="submit" disabled={loading} className="w-full bg-[#cc0d55] hover:bg-[#a60a44] text-white rounded-lg py-3 text-sm font-bold transition-all disabled:opacity-70 disabled:cursor-not-allowed flex justify-center cursor-pointer">
                   {loading ? <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div> : "Entrar"}
                 </button>
               </form>
+              {/* Temporariamente desabilitado: Esqueceu a senha?
               <div className="mt-5 text-center">
                 <button onClick={() => {setView('forgot'); setError('');}} className="text-sm text-white hover:text-red-100 underline underline-offset-4">Esqueceu a senha?</button>
               </div>
+              */}
             </>
           )}
 
           {}
           {view === 'forgot' && (
             <>
-              <button onClick={() => setView('login')} className="flex items-center text-white hover:text-red-100 mb-4 text-sm font-medium">
+              <button onClick={() => setView('login')} className="flex items-center text-white hover:text-red-100 mb-4 text-sm font-medium cursor-pointer">
                 <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
               </button>
               <h2 className="text-xl text-white font-bold mb-2">Recuperar Senha</h2>
@@ -156,7 +158,7 @@ export function Login() {
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                   <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="Seu e-mail cadastrado" className="w-full pl-10 pr-4 py-3 bg-white rounded-lg text-sm text-gray-800 outline-none focus:ring-2 focus:ring-[#ce0a53]/50" />
                 </div>
-                <button type="submit" disabled={loading} className="w-full bg-[#cc0d55] hover:bg-[#a60a44] text-white rounded-lg py-3 text-sm font-bold flex justify-center items-center gap-2 transition-all">
+                <button type="submit" disabled={loading} className="w-full bg-[#cc0d55] hover:bg-[#a60a44] text-white rounded-lg py-3 text-sm font-bold flex justify-center items-center gap-2 transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed">
                   {loading ? <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div> : <>Enviar Código <ArrowRight className="w-4 h-4" /></>}
                 </button>
               </form>
@@ -166,7 +168,7 @@ export function Login() {
           {}
           {view === 'code' && (
             <>
-              <button onClick={() => setView('forgot')} className="flex items-center text-white hover:text-red-100 mb-4 text-sm font-medium">
+              <button onClick={() => setView('forgot')} className="flex items-center text-white hover:text-red-100 mb-4 text-sm font-medium cursor-pointer">
                 <ChevronLeft className="w-4 h-4 mr-1" /> Alterar e-mail
               </button>
               <h2 className="text-xl text-white font-bold mb-2">Verifique seu E-mail</h2>
@@ -182,7 +184,7 @@ export function Login() {
                   placeholder="000000" 
                   className="w-full tracking-[1em] text-center py-4 bg-white rounded-lg text-xl font-bold text-gray-800 outline-none border-2 border-transparent focus:border-[#ce0a53]/30 transition-all"
                 />
-                <button type="submit" className="w-full bg-[#cc0d55] hover:bg-[#a60a44] text-white rounded-lg py-3 text-sm font-bold">Verificar Código</button>
+                <button type="submit" className="w-full bg-[#cc0d55] hover:bg-[#a60a44] text-white rounded-lg py-3 text-sm font-bold cursor-pointer">Verificar Código</button>
               </form>
               <p className="mt-6 text-center text-[10px] text-white uppercase tracking-wider">Não recebeu? Verifique a caixa de spam ou click em reenviar codigo.</p>
             </>
@@ -203,7 +205,7 @@ export function Login() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                   <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required placeholder="Confirme a nova senha" className="w-full pl-10 pr-4 py-3 bg-white rounded-lg text-sm text-gray-800 outline-none focus:ring-2 focus:ring-[#ce0a53]/50" />
                 </div>
-                <button type="submit" disabled={loading} className="w-full bg-[#cc0d55] hover:bg-[#a60a44] text-white rounded-lg py-3 text-sm font-bold flex justify-center transition-all">
+                <button type="submit" disabled={loading} className="w-full bg-[#cc0d55] hover:bg-[#a60a44] text-white rounded-lg py-3 text-sm font-bold flex justify-center transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed">
                   {loading ? <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div> : "Atualizar Senha"}
                 </button>
               </form>
@@ -216,7 +218,7 @@ export function Login() {
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
               <h2 className="text-xl text-white font-bold mb-2">Tudo pronto!</h2>
               <p className="text-white text-sm mb-8 font-medium">Sua senha foi redefinida com sucesso. Agora você já pode entrar na sua conta.</p>
-              <button onClick={() => setView('login')} className="w-full bg-[#cc0d55] hover:bg-[#a60a44] text-white rounded-lg py-3 text-sm font-bold shadow-lg shadow-[#cc0d55]/20">Fazer Login</button>
+              <button onClick={() => setView('login')} className="w-full bg-[#cc0d55] hover:bg-[#a60a44] text-white rounded-lg py-3 text-sm font-bold shadow-lg shadow-[#cc0d55]/20 cursor-pointer">Fazer Login</button>
             </div>
           )}
 

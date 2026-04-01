@@ -210,6 +210,20 @@ model NotificationPreference {
   updatedAt DateTime @updatedAt
 }
 
+model VoiceCache {
+  id        String   @id @default(cuid())
+  question  String   @unique @db.Text
+  audioUrl  String   @db.Text
+  voiceId   String
+  
+  usageCount Int     @default(1)
+  lastUsed   DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([question])
+  @@index([voiceId])
+}
+
 model IntegrationKey {
   id           String   @id @default(cuid())
   adminId      String

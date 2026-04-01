@@ -1,7 +1,7 @@
 import { redis } from '../cache/redis';
 import { prisma } from '../lib/prisma';
 
-export type AIService = 'gemini' | 'elevenlabs' | 'google-tts' | 'cloudinary';
+export type AIService = 'gemini' | 'openai' | 'elevenlabs' | 'google-tts' | 'cloudinary';
 
 export interface CostEntry {
   service: AIService;
@@ -14,6 +14,7 @@ export interface CostEntry {
 
 const COSTS = {
   GEMINI_TOKEN: 0.000000125, 
+  OPENAI_TOKEN: 0.00000015,
   ELEVENLABS_CHAR: 0.0000003, 
   CLOUDINARY_REQ: 0.00001,
   GOOGLE_TTS_CHAR: 0.000004,
@@ -23,6 +24,7 @@ export async function trackAICall(service: AIService, data: { tokens?: number, c
   try {
     let cost = 0;
     if (service === 'gemini' && data.tokens) cost = data.tokens * COSTS.GEMINI_TOKEN;
+    if (service === 'openai' && data.tokens) cost = data.tokens * COSTS.OPENAI_TOKEN;
     if (service === 'elevenlabs' && data.characters) cost = data.characters * COSTS.ELEVENLABS_CHAR;
     if (service === 'google-tts' && data.characters) cost = data.characters * COSTS.GOOGLE_TTS_CHAR;
     if (service === 'cloudinary') cost = COSTS.CLOUDINARY_REQ;
@@ -115,6 +117,7 @@ export async function getCostSummary() {
     today: {
       total: parseFloat(stats?.total_cost || '0'),
       gemini: parseFloat(stats?.['cost:gemini'] || '0'),
+      openai: parseFloat(stats?.['cost:openai'] || '0'),
       elevenlabs: parseFloat(stats?.['cost:elevenlabs'] || '0'),
       cloudinary: parseFloat(stats?.['cost:cloudinary'] || '0'),
     },

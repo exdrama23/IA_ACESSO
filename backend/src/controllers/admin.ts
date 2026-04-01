@@ -3,6 +3,8 @@ import { saveConfig, getConfig, invalidateConfigCache, SystemConfig } from '../c
 import { redis, getCacheStats, MAX_CACHE_SIZE, ENABLE_CACHE_LIMIT } from '../cache/redis';
 import { getCostSummary } from '../services/costTracker';
 import { sendIntegrationVerificationEmail } from '../services/email';
+import { resetGeminiState } from '../ai/gemini';
+import { resetOpenAIState } from '../ai/openai';
 import { prisma } from '../lib/prisma';
 
 export async function getUserProfile(req: Request, res: Response) {
@@ -205,7 +207,19 @@ export async function updateIntegrationKey(req: Request, res: Response) {
       return res.status(403).json({ error: 'Não autorizado. Realize a verificação por e-mail primeiro.' });
     }
 
-    // Função removida - implementar salvamento de chaves conforme necessário
+    // Salvar a chave de forma segura no Redis
+    await redis.set(`secret:key:${service}`, key);
+    
+    // Resetar o estado das IAs para voltarem a usar a principal se for uma chave de IA
+    if (service.startsWith('gemini')) {
+      resetGeminiState();
+    } else if (service.startsWith('openai')) {
+      resetOpenAIState();
+    }
+
+    // Invalida cache de configurações se necessário
+    invalidateConfigCache();
+
     res.json({ status: 'ok', message: `Chave do serviço ${service} atualizada com sucesso` });
   } catch (error) {
     console.error('[ADMIN] Erro salvar chave:', error);
@@ -419,6 +433,7 @@ export async function updateSystemConfig(req: Request, res: Response) {
     const newConfig: SystemConfig = {
       ...currentConfig,
       embedding: { ...currentConfig.embedding, ...updates.embedding },
+      chat: { ...currentConfig.chat, ...updates.chat },
       audio: { ...currentConfig.audio, ...updates.audio },
       tts: { ...currentConfig.tts, ...updates.tts },
       limits: { ...currentConfig.limits, ...updates.limits },

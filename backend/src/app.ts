@@ -34,6 +34,7 @@ import { createRateLimiter } from "./middleware/rateLimit";
 import { errorHandler } from "./middleware/errorHandler";
 import { healthCheck } from "./controllers/health";
 import { prisma } from "./lib/prisma";
+import { initCleanupSchedule, runDatabaseCleanup } from "./utils/cleanup";
 
 dotenv.config();
 
@@ -61,12 +62,6 @@ app.post("/auth/reset-password", createRateLimiter({ windowMs: 900000, maxReques
 
 app.post("/api/chat", 
   (req, res, next) => {
-    console.log('[CHAT] POST recebido:', {
-      method: req.method,
-      ip: req.ip,
-      headers: req.headers,
-      hasFile: !!req.file
-    });
     next();
   },
   upload.single("audio"), 
@@ -103,29 +98,23 @@ app.use(errorHandler);
 
 const server = app.listen(port, async () => {
   try {
-    
     await prisma.$connect();
-    console.log('[PRISMA] Conectado ao Neon DB');
   } catch (error) {
-    console.error('[PRISMA] Erro ao conectar:', error);
   }
 
   await initFAQEmbeddings();
   await initSemantic();
   
-  console.log('[APP] Inicializando Rede Neural Sentence-Transformers...');
   try {
     await neuralDetector.initialize();
-    console.log('[APP] [SUCESSO] Rede Neural inicializada com sucesso');
   } catch (error) {
-    console.error('[APP] [ERRO] Falha ao inicializar rede neural:', error);
   }
 
-  console.log(`Servidor AcessoIA (PROD-READY) rodando em http://localhost:${port}`);
+  initCleanupSchedule();
+  runDatabaseCleanup();
 });
 
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM recebido, encerrando...');
   server.close(async () => {
     await prisma.$disconnect();
     process.exit(0);

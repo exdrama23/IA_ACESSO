@@ -384,7 +384,7 @@ export function AdminConfig() {
                 activeView === 'integrations' ? 'text-blue-600 border-blue-600' : 'text-gray-400 border-transparent hover:text-gray-600'
               }`}
             >
-              Integrações <span className="bg-gray-100 text-gray-500 py-0.5 px-1.5 rounded-md text-[10px]">3</span>
+              Integrações 
             </button>
             <button 
               onClick={() => setActiveView('metrics')}

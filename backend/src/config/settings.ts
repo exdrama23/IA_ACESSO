@@ -3,12 +3,18 @@ import { redis } from '../cache/redis';
 export type EmbeddingStrategy = 'tfidf' | 'gemini' | 'hybrid';
 export type TTSModel = 'elevenlabs' | 'google';
 export type StorageType = 'cloudinary' | 'redis';
+export type AIProvider = 'gemini' | 'openai';
 
 export interface SystemConfig {
   embedding: {
     strategy: EmbeddingStrategy;
     tfidf_threshold: number;
     gemini_threshold: number;
+  };
+  chat: {
+    primary: AIProvider;
+    fallback: AIProvider;
+    useFallback: boolean;
   };
   audio: {
     storage: StorageType;
@@ -35,6 +41,11 @@ const DEFAULT_CONFIG: SystemConfig = {
     strategy: 'tfidf',           
     tfidf_threshold: 0.75,
     gemini_threshold: 0.85
+  },
+  chat: {
+    primary: 'gemini',
+    fallback: 'openai',
+    useFallback: true
   },
   audio: {
     storage: 'cloudinary',
@@ -80,8 +91,13 @@ export async function loadConfig(): Promise<SystemConfig> {
       ? JSON.parse(availableVoicesStr as string) 
       : DEFAULT_CONFIG.tts.availableVoices;
 
+    const chatPrimary = (await redis.get('config:chat:primary')) as AIProvider || 'gemini';
+    const chatFallback = (await redis.get('config:chat:fallback')) as AIProvider || 'openai';
+    const chatUseFallback = (await redis.get('config:chat:useFallback')) === 'true';
+
     const config: SystemConfig = {
       embedding: { strategy, tfidf_threshold: tfidfThreshold, gemini_threshold: geminiThreshold },
+      chat: { primary: chatPrimary, fallback: chatFallback, useFallback: chatUseFallback },
       audio: { storage, ttl_seconds: ttl },
       tts: { model: ttsModel, voiceId: voiceId, availableVoices: availableVoices },
       limits: { max_audios_per_session: maxAudios, max_request_size_mb: 10 },
@@ -109,6 +125,9 @@ export async function saveConfig(newConfig: SystemConfig, adminEmail: string): P
       'config:embedding:strategy': newConfig.embedding.strategy,
       'config:embedding:tfidf_threshold': newConfig.embedding.tfidf_threshold.toString(),
       'config:embedding:gemini_threshold': newConfig.embedding.gemini_threshold.toString(),
+      'config:chat:primary': newConfig.chat.primary,
+      'config:chat:fallback': newConfig.chat.fallback,
+      'config:chat:useFallback': newConfig.chat.useFallback.toString(),
       'config:audio:storage': newConfig.audio.storage,
       'config:audio:ttl_seconds': newConfig.audio.ttl_seconds.toString(),
       'config:tts:model': newConfig.tts.model,

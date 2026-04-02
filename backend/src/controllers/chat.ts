@@ -95,6 +95,7 @@ export async function chat(req: Request, res: Response, next: any) {
     console.log(`[SESSÃO: ${sessionId}] Pergunta a processar:`, question);
 
     if (isMalicious(question)) {
+      console.log('[CHAT] Pergunta bloqueada por filtro de segurança');
       return res.json({ text: "Comando bloqueado por segurança.", audioUrl: "" });
     }
 

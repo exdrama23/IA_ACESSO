@@ -16,7 +16,6 @@ export function formatarRespostaComDirecionamento(
   };
 }
 
-// Alias para compatibilidade
 export const formatarRespostaParaTotem = formatarRespostaComDirecionamento;
 
 export function gerarSugestoesRelacionadas(

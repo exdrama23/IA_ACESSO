@@ -16,32 +16,48 @@ export function resetOpenAIState() {
 
 async function getNextOpenAIClient(): Promise<OpenAI | null> {
   if (activeApiKeyIndex === 0) {
-    const customKey = await redis.get("secret:key:openai");
-    const apiKey = customKey || process.env.OPENAI_API_KEY;
-    if (apiKey) {
-      currentClient = new OpenAI({ apiKey: apiKey as string });
+    const envKey = process.env.OPENAI_API_KEY;
+    if (envKey) {
+      console.log('[OPENAI] Usando chave do .env (OPENAI_API_KEY)');
+      currentClient = new OpenAI({ apiKey: envKey as string });
       return currentClient;
     }
     activeApiKeyIndex = 1;
   }
 
   if (activeApiKeyIndex === 1) {
-    const b1 = await redis.get("secret:key:openai_backup_1");
-    if (b1) {
-      currentClient = new OpenAI({ apiKey: b1 as string });
+    let primaryKey = await redis.get("secret:key:openai_primary");
+    if (!primaryKey) {
+      primaryKey = await redis.get("secret:key:openai");
+    }
+    if (primaryKey) {
+      console.log('[OPENAI] Usando chave principal do admin (secret:key:openai_primary ou secret:key:openai)');
+      currentClient = new OpenAI({ apiKey: primaryKey as string });
       return currentClient;
     }
     activeApiKeyIndex = 2;
   }
 
   if (activeApiKeyIndex === 2) {
+    const b1 = await redis.get("secret:key:openai_backup_1");
+    if (b1) {
+      console.log('[OPENAI] Usando backup 1 (secret:key:openai_backup_1)');
+      currentClient = new OpenAI({ apiKey: b1 as string });
+      return currentClient;
+    }
+    activeApiKeyIndex = 3;
+  }
+
+  if (activeApiKeyIndex === 3) {
     const b2 = await redis.get("secret:key:openai_backup_2");
     if (b2) {
+      console.log('[OPENAI] Usando backup 2 (secret:key:openai_backup_2)');
       currentClient = new OpenAI({ apiKey: b2 as string });
       return currentClient;
     }
   }
 
+  console.error('[OPENAI] Nenhuma chave de API disponível!');
   return null;
 }
 

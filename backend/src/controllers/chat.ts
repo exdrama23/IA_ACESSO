@@ -11,16 +11,23 @@ import {
 import { searchFAQ } from "../ai/embeddings";
 import { askGemini, resolveWorkingChatModel } from "../ai/gemini";
 import { askOpenAI } from "../ai/openai";
+import { askOpenRouter } from "../ai/openrouter";
 import { gerarAudio } from "../ai/tts";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { generateTFIDFVector } from "../ai/semantic";
-import { getConfig, AIProvider } from "../config/settings";
+import { getConfig, AIProvider, saveConfig } from "../config/settings";
+import { createSystemNotification } from "../utils/notifications";
+import { findSimilarQuestionFromDatabase } from "../utils/questionMatcher";
 
 async function askAI(provider: AIProvider, question: string, context: string, history: any[]): Promise<string> {
   if (provider === 'gemini') {
     return await askGemini(question, context, history);
-  } else {
+  } else if (provider === 'openai') {
     return await askOpenAI(question, context, history);
+  } else if (provider === 'openrouter') {
+    return await askOpenRouter(question, context, history);
+  } else {
+    throw new Error(`Provider desconhecido: ${provider}`);
   }
 }
 import { prisma } from "../lib/prisma";
@@ -104,9 +111,6 @@ export async function chat(req: Request, res: Response, next: any) {
     let source = "IA_SEMANTICA";
     let matchScore = 0;
 
-    // ═══════════════════════════════════════════════════════════════
-    // PASSO 1: Detectar categoria com NEURAL embeddings
-    // ═══════════════════════════════════════════════════════════════
     const neuralMatch = await neuralDetector.findCategoryBySimilarity(question, 0.85);
 
     if (neuralMatch) {
@@ -122,16 +126,12 @@ export async function chat(req: Request, res: Response, next: any) {
       }
 
       if (faqItem) {
-        // IA fala e exibe apenas o texto da resposta
         respostaText = faqItem.answer;
         source = "FAQ_NEURAL";
         matchScore = neuralMatch.score;
       }
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // PASSO 2: Fallback para Cache Redis (Texto)
-    // ═══════════════════════════════════════════════════════════════
     if (!respostaText) {
       const textCacheKey = gerarChave(question, "text");
       const cachedResponse = await getCache(textCacheKey) as string;
@@ -144,19 +144,18 @@ export async function chat(req: Request, res: Response, next: any) {
       }
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // PASSO 3: IA Generativa (Primário e Fallback)
-    // ═══════════════════════════════════════════════════════════════
     if (!respostaText) {
       const config = await getConfig();
       const history = await getConversationHistory(sessionId);
-      
-      // Usar busca semântica legada APENAS para fornecer contexto se neural falhar
+
       const topMatches = await searchFAQ(question, 2);
       contextText = topMatches.map(m => m.item.answer).join("\n");
 
       const primary = config.chat.primary;
       const fallback = config.chat.fallback;
+      const tertiary = config.chat.tertiary;
+
+      console.log(`[AI] Configuração: Primary=${primary}, Fallback=${fallback}, Tertiary=${tertiary}, UseFallback=${config.chat.useFallback}`);
 
       try {
         console.log(`[AI] Consultando provedor primário: ${primary}...`);
@@ -170,10 +169,54 @@ export async function chat(req: Request, res: Response, next: any) {
             console.log(`[AI] Consultando fallback: ${fallback}...`);
             respostaText = await askAI(fallback, question, contextText, history);
             source = `IA_${fallback.toUpperCase()}_FALLBACK`;
+            
+            console.log(`[AI] FALLBACK FUNCIONOU! Promovendo ${fallback} a provedor principal...`);
+
+            const newConfig = { ...config };
+            newConfig.chat.primary = fallback;
+            newConfig.chat.fallback = primary;
+            newConfig.metadata.last_modified = Date.now();
+            newConfig.metadata.modified_by = 'system:auto-failover';
+            newConfig.metadata.version++;
+            
+            await saveConfig(newConfig, 'system@auto-failover');
+            await createSystemNotification({
+              type: 'warning',
+              title: `Falha em ${primary} - Fallback Ativado`,
+              message: `Houve um erro na chave API do ${primary}. ${fallback} agora é o provedor principal. A chave do ${primary} será retestada em breve.`
+            });
+            
           } catch (fallbackError) {
-            console.error(`[AI] FALHA TOTAL (Primário e Fallback).`);
-            respostaText = "Desculpe, estou com uma instabilidade técnica. Pode repetir a pergunta em instantes?";
-            source = "ERRO_SISTEMA";
+            console.warn(`[AI] Falha no fallback (${fallback}):`, (fallbackError as any).message);
+
+            try {
+              console.log(`[AI] Consultando terceiro fallback: ${tertiary}...`);
+              respostaText = await askAI(tertiary, question, contextText, history);
+              source = `IA_${tertiary.toUpperCase()}_TERTIARY_FALLBACK`;
+
+              console.log(`[AI] TERCEIRO FALLBACK FUNCIONOU! Promovendo ${tertiary} a provedor principal...`);
+              
+              const newConfig = { ...config };
+              newConfig.chat.primary = tertiary;
+              newConfig.chat.fallback = fallback;
+              newConfig.chat.tertiary = primary;
+              newConfig.metadata.last_modified = Date.now();
+              newConfig.metadata.modified_by = 'system:auto-failover-tertiary';
+              newConfig.metadata.version++;
+              
+              await saveConfig(newConfig, 'system@auto-failover-tertiary');
+              
+              await createSystemNotification({
+                type: 'error',
+                title: `Falha em ${primary} e ${fallback} - ${tertiary} Ativado`,
+                message: `Erros nos provedores ${primary} e ${fallback}. ${tertiary} agora é o provedor principal (modo emergência).`
+              });
+              
+            } catch (tertiaryError) {
+              console.error(`[AI]  FALHA TOTAL (Primário, Fallback e Tertiary).`);
+              respostaText = "Desculpe, estou com uma instabilidade técnica severa. Pode repetir a pergunta em alguns minutos?";
+              source = "ERRO_SISTEMA";
+            }
           }
         } else {
           respostaText = "Desculpe, tive um problema ao processar sua resposta.";
@@ -203,7 +246,6 @@ export async function chat(req: Request, res: Response, next: any) {
     console.log(`[FLUXO] INICIANDO BUSCA DE ÁUDIO EM CACHE`);
     console.log(`═══════════════════════════════════════════════`);
 
-    // PASSO 1: Buscar perguntas SIMILARES no Redis (mesma categoria + semântica)
     console.log(`\n[PASSO 1] Buscando perguntas similares no Redis...`);
     const similarQuestion = await findSimilarCachedQuestion(question, activeVoiceId, 0.5);
 
@@ -218,67 +260,89 @@ export async function chat(req: Request, res: Response, next: any) {
       audioSource = "REDIS_SIMILAR";
       source = `${source}_AUDIO_REDIS_SIMILAR`;
       
-      // Salvar a NOVA pergunta com o MESMO áudio (sem fazer novo upload)
       console.log(`\n[PASSO 2] Salvando nova pergunta vinculada ao áudio existente...`);
       await cacheQuestionWithAudio(question, audioUrl, activeVoiceId, config.audio.ttl_seconds);
+      await prisma.voiceCache.upsert({
+        where: { question },
+        update: { usageCount: { increment: 1 }, lastUsed: new Date() },
+        create: { question, audioUrl, voiceId: activeVoiceId }
+      });
       console.log(`  ✓ Nova pergunta cacheada com URL do Redis`);
       
     } else {
-      // PASSO 2: Se não encontrar similar no Redis, buscar no DB (Cache Permanente)
-      console.log(`\n[PASSO 2] Nenhuma similar no Redis. Buscando no Banco de Dados (Cache Permanente)...`);
-      const dbCachedVoice = await prisma.voiceCache.findUnique({
-        where: { question: question }
-      });
+      console.log(`\n[PASSO 2] Nenhuma similar no Redis. Buscando similar no Banco de Dados...`);
+      const similarQuestionDB = await findSimilarQuestionFromDatabase(question, activeVoiceId, 0.5);
 
-      if (dbCachedVoice && dbCachedVoice.audioUrl) {
-        console.log(`\n✓ [SUCESSO] Áudio recuperado do Banco de Dados!`);
-        audioUrl = dbCachedVoice.audioUrl;
-        audioSource = "DATABASE_PERMANENTE";
-        source = `${source}_AUDIO_DB`;
-
-        // Atualizar contador de uso e recachear no Redis para performance
-        await prisma.voiceCache.update({
-          where: { id: dbCachedVoice.id },
-          data: { usageCount: { increment: 1 }, lastUsed: new Date() }
-        });
-        await cacheQuestionWithAudio(question, audioUrl, activeVoiceId, config.audio.ttl_seconds);
-      } else {
-        // PASSO 3: Se não encontrar no DB, buscar por EXATIDÃO na pergunta (Redis)
-        console.log(`\n[PASSO 3] Nenhuma no DB. Buscando por exatidão no Redis...`);
-        const cachedAudio = await getCachedAudioByQuestion(question, activeVoiceId);
+      if (similarQuestionDB && similarQuestionDB.audioUrl) {
+        console.log(`\n✓ [SUCESSO] Pergunta similar no BD!`);
+        console.log(`  Pergunta similar: "${similarQuestionDB.pergunta}"`);
+        console.log(`  URL do áudio (BD): ${similarQuestionDB.audioUrl}`);
         
-        if (cachedAudio && cachedAudio.audioUrl) {
-          console.log(`\n✓ [SUCESSO] Pergunta exata encontrada no Redis!`);
-          audioUrl = cachedAudio.audioUrl;
-          audioSource = "REDIS_EXATO";
-          source = source === "CACHE_REDIS" ? "CACHE_AUDIO_REDIS" : `${source}_AUDIO_REDIS_EXATO`;
-          
-          // Aproveitar e salvar no DB para ser permanente
-          await prisma.voiceCache.upsert({
-            where: { question },
-            update: { usageCount: { increment: 1 }, lastUsed: new Date() },
-            create: { question, audioUrl, voiceId: activeVoiceId }
+        audioUrl = similarQuestionDB.audioUrl;
+        audioSource = "DATABASE_SIMILAR";
+        source = `${source}_AUDIO_DB_SIMILAR`;
+        
+        await cacheQuestionWithAudio(question, audioUrl, activeVoiceId, config.audio.ttl_seconds);
+        await prisma.voiceCache.upsert({
+          where: { question },
+          update: { usageCount: { increment: 1 }, lastUsed: new Date() },
+          create: { question, audioUrl, voiceId: activeVoiceId }
+        });
+        
+      } else {
+        console.log(`\n[PASSO 3] Nenhuma similar no BD. Buscando por exatidão...`);
+        const dbCachedVoice = await prisma.voiceCache.findUnique({
+          where: { question: question }
+        });
+
+        if (dbCachedVoice && dbCachedVoice.audioUrl) {
+          console.log(`\n✓ [SUCESSO] Áudio recuperado do Banco de Dados!`);
+          audioUrl = dbCachedVoice.audioUrl;
+          audioSource = "DATABASE_PERMANENTE";
+          source = `${source}_AUDIO_DB`;
+
+          await prisma.voiceCache.update({
+            where: { id: dbCachedVoice.id },
+            data: { usageCount: { increment: 1 }, lastUsed: new Date() }
           });
-          
+          await cacheQuestionWithAudio(question, audioUrl, activeVoiceId, config.audio.ttl_seconds);
         } else {
-          // PASSO 4: Se não encontrar NADA, gerar novo áudio
-          console.log(`\n[PASSO 4] Nenhum áudio em lugar nenhum. Gerando novo áudio com TTS...`);
-          const audioUrl_generated = await gerarAudio(respostaText);
-
-          if (audioUrl_generated) {
-            console.log(`\n✓ [SUCESSO] Áudio gerado e enviado para Cloudinary`);
-            audioUrl = audioUrl_generated;
-            audioSource = "CLOUDINARY_NOVO";
+          console.log(`\n[PASSO 4] Nenhuma no DB. Buscando por exatidão no Redis...`);
+          const cachedAudio = await getCachedAudioByQuestion(question, activeVoiceId);
+          
+          if (cachedAudio && cachedAudio.audioUrl) {
+            console.log(`\n✓ [SUCESSO] Pergunta exata encontrada no Redis!`);
+            audioUrl = cachedAudio.audioUrl;
+            audioSource = "REDIS_EXATO";
+            source = source === "CACHE_REDIS" ? "CACHE_AUDIO_REDIS" : `${source}_AUDIO_REDIS_EXATO`;
             
-
-            await cacheQuestionWithAudio(question, audioUrl, activeVoiceId, config.audio.ttl_seconds);
-            await prisma.voiceCache.create({
-              data: { question, audioUrl, voiceId: activeVoiceId }
+            await prisma.voiceCache.upsert({
+              where: { question },
+              update: { usageCount: { increment: 1 }, lastUsed: new Date() },
+              create: { question, audioUrl, voiceId: activeVoiceId }
             });
-            console.log(`  ✓ Pergunta salva no DB e no Redis.`);
+            
           } else {
-            console.error("\n✗ [ERRO] Falha ao gerar áudio");
-            audioUrl = "";
+            console.log(`\n[PASSO 5] Nenhum áudio em lugar nenhum. Gerando novo áudio com TTS...`);
+            const audioUrl_generated = await gerarAudio(respostaText);
+
+            if (audioUrl_generated) {
+              console.log(`\n✓ [SUCESSO] Áudio gerado e enviado para Cloudinary`);
+              audioUrl = audioUrl_generated;
+              audioSource = "CLOUDINARY_NOVO";
+              
+
+              await cacheQuestionWithAudio(question, audioUrl, activeVoiceId, config.audio.ttl_seconds);
+              await prisma.voiceCache.upsert({
+                where: { question },
+                update: { audioUrl, voiceId: activeVoiceId, usageCount: { increment: 1 }, lastUsed: new Date() },
+                create: { question, audioUrl, voiceId: activeVoiceId }
+              });
+              console.log(`  ✓ Pergunta salva no DB e no Redis.`);
+            } else {
+              console.error("\n✗ [ERRO] Falha ao gerar áudio");
+              audioUrl = "";
+            }
           }
         }
       }
@@ -289,18 +353,39 @@ export async function chat(req: Request, res: Response, next: any) {
     console.log(`═══════════════════════════════════════════════\n`);
 
     try {
-      await prisma.chatHistory.create({
-        data: {
-          userId: (req as any).user?.id || null,
-          sessionId,
-          question,
-          answer: respostaText,
-          source,
-          confidence: parseFloat(confidence),
-          audioUrl,
-          embedding: JSON.stringify(generateTFIDFVector(question).data)
+      const existingErrorRecord = await prisma.chatHistory.findFirst({
+        where: {
+          question: question,
+          source: "ERRO_SISTEMA"
         }
       });
+
+      if (existingErrorRecord && source !== "ERRO_SISTEMA") {
+        await prisma.chatHistory.update({
+          where: { id: existingErrorRecord.id },
+          data: {
+            answer: respostaText,
+            source: source,
+            confidence: parseFloat(confidence),
+            audioUrl: audioUrl || null,
+            embedding: JSON.stringify(generateTFIDFVector(question).data),
+            updatedAt: new Date()
+          }
+        });
+      } else {
+        await prisma.chatHistory.create({
+          data: {
+            userId: (req as any).user?.id || null,
+            sessionId,
+            question,
+            answer: respostaText,
+            source,
+            confidence: parseFloat(confidence),
+            audioUrl: audioUrl || null,
+            embedding: JSON.stringify(generateTFIDFVector(question).data)
+          }
+        });
+      }
     } catch (dbErr) {
       console.error('[PRISMA] Erro ao salvar histórico:', dbErr);
     }

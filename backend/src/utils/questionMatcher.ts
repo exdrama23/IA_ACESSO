@@ -1,8 +1,8 @@
 import { redis } from "../cache/redis";
 import { compareTwoStrings } from "string-similarity";
 import { faq } from "../data/faq";
+import { prisma } from "../lib/prisma";
 
-// Extrair palavras-chave (remover stop words)
 export function extractKeywords(texto: string): Set<string> {
   const stopWords = new Set([
     "o", "a", "os", "as", "do", "da", "dos", "das", "de", "um", "uma",
@@ -156,8 +156,7 @@ export async function findSimilarCachedQuestion(
 
         analysisCount++;
         const keywordsCached = new Set(cached.keywords || []);
-        
-        // Comparação exata
+
         const exataMatch = perguntaNova.toLowerCase().trim() === 
                           cached.pergunta.toLowerCase().trim();
         
@@ -215,6 +214,96 @@ export async function findSimilarCachedQuestion(
 
   } catch (error) {
     console.error("[MATCHER] Erro ao buscar perguntas similares:", error);
+    return null;
+  }
+}
+
+export async function findSimilarQuestionFromDatabase(
+  perguntaNova: string,
+  voiceId: string,
+  similarityThreshold: number = 0.5
+): Promise<CachedQuestion | null> {
+  try {
+    const allCached = await prisma.voiceCache.findMany();
+    
+    if (!allCached || allCached.length === 0) {
+      return null;
+    }
+
+    const categoryFromFAQ = findCategoryInFAQ(perguntaNova);
+
+    if (categoryFromFAQ) {
+      const categoryMatches = allCached.filter(
+        cached => cached.voiceId === voiceId
+      );
+
+      if (categoryMatches.length > 0) {
+        const chosen = categoryMatches[0];
+        return {
+          pergunta: chosen.question,
+          audioUrl: chosen.audioUrl,
+          voiceId: chosen.voiceId,
+          keywords: [],
+          timestamp: chosen.createdAt.getTime()
+        };
+      }
+    }
+
+    const keywordsNova = extractKeywords(perguntaNova);
+    let bestMatch: { question: CachedQuestion; score: number } = { 
+      question: null as any, 
+      score: 0 
+    };
+
+    for (const cached of allCached) {
+      if (cached.voiceId !== voiceId) {
+        continue;
+      }
+
+      const exataMatch = perguntaNova.toLowerCase().trim() === 
+                        cached.question.toLowerCase().trim();
+      
+      if (exataMatch) {
+        return {
+          pergunta: cached.question,
+          audioUrl: cached.audioUrl,
+          voiceId: cached.voiceId,
+          keywords: [],
+          timestamp: cached.createdAt.getTime()
+        };
+      }
+
+      const keywordsCached = extractKeywords(cached.question);
+      const jaccardScore = jaccardSimilarity(keywordsNova, keywordsCached);
+      const semanticScore = compareTwoStrings(
+        perguntaNova.toLowerCase(),
+        cached.question.toLowerCase()
+      );
+
+      const combinedScore = (jaccardScore * 0.4) + (semanticScore * 0.6);
+
+      if (combinedScore > bestMatch.score) {
+        bestMatch = { 
+          question: {
+            pergunta: cached.question,
+            audioUrl: cached.audioUrl,
+            voiceId: cached.voiceId,
+            keywords: [],
+            timestamp: cached.createdAt.getTime()
+          }, 
+          score: combinedScore 
+        };
+      }
+    }
+
+    if (bestMatch.score >= similarityThreshold) {
+      return bestMatch.question;
+    }
+
+    return null;
+
+  } catch (error) {
+    console.error("[MATCHER] Erro ao buscar no banco de dados:", error);
     return null;
   }
 }

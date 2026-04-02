@@ -35,7 +35,7 @@ export function MetricsView() {
     
     const interval = setInterval(() => {
       fetchDetailedMetrics();
-    }, 300000); // 5 min polling
+    }, 300000); 
 
     return () => clearInterval(interval);
   }, [timeRange]);

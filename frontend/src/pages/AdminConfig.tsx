@@ -7,8 +7,6 @@ import {
 } from 'lucide-react';
 import Logo from '../assets/LogoAcesso2.png';
 
-
-// Componentes do Dashboard
 import { DashboardOverview } from '../components/AdminDashboard/DashboardOverview';
 import { UserProfileView } from '../components/AdminDashboard/UserProfileView';
 import { CalendarView } from '../components/AdminDashboard/CalendarView';

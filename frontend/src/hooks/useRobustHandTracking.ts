@@ -56,8 +56,7 @@ export function useRobustHandTracking(videoElement: HTMLVideoElement | null) {
     const setup = async () => {
       try {
         const visionModule = (await import(
-          // @ts-ignore
-          /* @vite-ignore */ "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs"
+         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs"
         )) as VisionModule;
         
         const { FilesetResolver, HandLandmarker } = visionModule;

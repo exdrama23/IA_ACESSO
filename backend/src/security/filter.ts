@@ -1,9 +1,8 @@
 export function isMalicious(input: string): boolean {
-  // 🔒 Verificação de segurança pode ser desativada via variável de ambiente
   const securityEnabled = process.env.ENABLE_SECURITY_CHECK !== 'false';
   
   if (!securityEnabled) {
-    console.log('[SECURITY] 🚀 MODO DEV: Verificação de segurança desativada');
+    console.log('[SECURITY] MODO DEV: Verificação de segurança desativada');
     return false;
   }
 
@@ -22,7 +21,7 @@ export function isMalicious(input: string): boolean {
   );
 
   if (isMaliciousInput) {
-    console.log('[SECURITY] ⚠️ Input suspeito detectado e bloqueado');
+    console.log('[SECURITY] Input suspeito detectado e bloqueado');
   }
 
   return isMaliciousInput;

@@ -25,21 +25,43 @@ export function resetGeminiState() {
 async function getNextApiKey(): Promise<string | null> {
   if (activeApiKeyIndex === 0) {
     const envKey = process.env.GEMINI_API_KEY;
-    if (envKey) return envKey;
+    if (envKey) {
+      console.log('[GEMINI] Usando chave do .env (GEMINI_API_KEY)');
+      return envKey;
+    }
     activeApiKeyIndex = 1; 
   }
 
   if (activeApiKeyIndex === 1) {
-    const b1 = await redis.get("secret:key:gemini_backup_1");
-    if (b1) return b1 as string;
+    let primaryKey = await redis.get("secret:key:gemini_primary");
+    if (!primaryKey) {
+      primaryKey = await redis.get("secret:key:gemini");
+    }
+    if (primaryKey) {
+      console.log('[GEMINI] Usando chave principal do admin (secret:key:gemini_primary ou secret:key:gemini)');
+      return primaryKey as string;
+    }
     activeApiKeyIndex = 2; 
   }
 
   if (activeApiKeyIndex === 2) {
-    const b2 = await redis.get("secret:key:gemini_backup_2");
-    if (b2) return b2 as string;
+    const b1 = await redis.get("secret:key:gemini_backup_1");
+    if (b1) {
+      console.log('[GEMINI] Usando backup 1 (secret:key:gemini_backup_1)');
+      return b1 as string;
+    }
+    activeApiKeyIndex = 3; 
   }
 
+  if (activeApiKeyIndex === 3) {
+    const b2 = await redis.get("secret:key:gemini_backup_2");
+    if (b2) {
+      console.log('[GEMINI] Usando backup 2 (secret:key:gemini_backup_2)');
+      return b2 as string;
+    }
+  }
+
+  console.error('[GEMINI] Nenhuma chave de API disponível!');
   return null;
 }
 
@@ -48,7 +70,7 @@ export async function resolveWorkingChatModel(): Promise<{ model: string, genAI:
     return { model: activeChatModelName, genAI: currentGenAI };
   }
 
-  while (activeApiKeyIndex < 3) {
+  while (activeApiKeyIndex < 4) {
     const apiKey = await getNextApiKey();
     
     if (!apiKey) {

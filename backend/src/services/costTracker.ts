@@ -1,7 +1,7 @@
 import { redis } from '../cache/redis';
 import { prisma } from '../lib/prisma';
 
-export type AIService = 'gemini' | 'openai' | 'elevenlabs' | 'google-tts' | 'cloudinary';
+export type AIService = 'gemini' | 'openai' | 'openrouter' | 'elevenlabs' | 'google-tts' | 'cloudinary';
 
 export interface CostEntry {
   service: AIService;
@@ -29,13 +29,11 @@ export async function trackAICall(service: AIService, data: { tokens?: number, c
     if (service === 'google-tts' && data.characters) cost = data.characters * COSTS.GOOGLE_TTS_CHAR;
     if (service === 'cloudinary') cost = COSTS.CLOUDINARY_REQ;
 
-    // Granularidade horária para gráficos de 24h
     const now = new Date();
     const hourStart = new Date(now);
     hourStart.setMinutes(0, 0, 0);
 
     try {
-      // Upsert por HORA para permitir visão detalhada de 24h
       await prisma.apiUsage.upsert({
         where: {
           service_date: {

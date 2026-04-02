@@ -36,8 +36,6 @@ export async function getTableData(req: Request, res: Response) {
     let data: any[] = [];
     let total = 0;
 
-    // Prisma não suporta chamadas dinâmicas como prisma[tableName].findMany() de forma tipada facilmente,
-    // então usamos um switch para garantir segurança e tipos.
     switch (tableName) {
       case 'User':
         [data, total] = await Promise.all([

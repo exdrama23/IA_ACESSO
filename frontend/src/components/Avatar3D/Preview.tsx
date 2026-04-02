@@ -27,7 +27,6 @@ function OlhosPreview() {
   );
 }
 
-// Versão animada da boca (com deformação do shader)
 function BocaAnimadaPreview({ animationType }: { animationType: AnimationType }) {
   const { activeVoiceId } = useAppStore();
 
@@ -119,8 +118,7 @@ function BocaAnimadaPreview({ animationType }: { animationType: AnimationType })
   useFrame((state) => {
     if (line.material instanceof THREE.ShaderMaterial) {
       line.material.uniforms.uTime.value = state.clock.getElapsedTime();
-      
-      // Sincronizar intensidade com tipo de animação
+
       if (animationType === "speaking") {
         line.material.uniforms.uIntensity.value = 0.5;
       } else if (animationType === "listening") {
@@ -134,7 +132,6 @@ function BocaAnimadaPreview({ animationType }: { animationType: AnimationType })
   return <primitive object={line} />;
 }
 
-// Componente visual 3D (versão preview)
 function IAVisualPreview({ animationType = "idle" }: Avatar3DPreviewProps) {
   const mesh = useRef<THREE.Mesh>(null);
   const material = useRef<THREE.ShaderMaterial>(null);

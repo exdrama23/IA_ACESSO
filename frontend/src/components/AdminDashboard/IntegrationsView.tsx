@@ -45,8 +45,14 @@ export function IntegrationsView() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ service })
       });
+      const result = await response.json();
       if (response.ok) {
-        setVerifyModal({ service, step: 'code' });
+        if (result.authToken) {
+          setAuthToken(result.authToken);
+          setVerifyModal({ service, step: 'edit' });
+        } else {
+          setVerifyModal({ service, step: 'code' });
+        }
       } else {
         showToast('Erro ao solicitar verificação', 'error');
       }
@@ -83,6 +89,7 @@ export function IntegrationsView() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ service: verifyModal?.service, key: newKey, authToken })
       });
+      const result = await response.json();
       if (response.ok) {
         showToast('Chave atualizada com sucesso!');
         setVerifyModal(null);
@@ -90,21 +97,23 @@ export function IntegrationsView() {
         setAuthToken('');
         setCode('');
       } else {
-        showToast('Erro ao salvar chave', 'error');
+        console.error('[UPDATE KEY] Erro:', result);
+        showToast(result.error || 'Erro ao salvar chave', 'error');
       }
     } catch (err) {
+      console.error('[UPDATE KEY] Erro de conexão:', err);
       showToast('Erro de conexão', 'error');
     }
   };
 
-  const updateChatConfig = async (primary: string, fallback: string, useFallback: boolean) => {
+  const updateChatConfig = async (primary: string, fallback: string, tertiary: string, useFallback: boolean) => {
     setIsSavingChat(true);
     try {
       const response = await fetch(`${API_URL}/admin/config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ 
-          chat: { primary, fallback, useFallback } 
+          chat: { primary, fallback, tertiary, useFallback } 
         })
       });
       if (response.ok) {
@@ -143,7 +152,7 @@ export function IntegrationsView() {
         </div>
 
         <div className="divide-y divide-gray-200">
-          {['gemini', 'openai', 'elevenlabs', 'cloudinary'].map((service) => (
+          {['gemini', 'openai', 'openrouter', 'elevenlabs', 'cloudinary'].map((service) => (
             <div key={service} className="p-6 hover:bg-gray-50/30 transition-colors">
               <div className="flex items-start justify-between mb-4">
                 <div>
@@ -189,29 +198,44 @@ export function IntegrationsView() {
           )}
         </div>
         <div className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-500 uppercase tracking-tighter">Provedor Principal</label>
               <select 
                 disabled={isSavingChat}
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500/20 outline-none transition-all cursor-pointer disabled:bg-gray-50"
                 value={config?.chat?.primary || 'gemini'}
-                onChange={(e) => updateChatConfig(e.target.value, config?.chat?.fallback || 'openai', config?.chat?.useFallback ?? true)}
+                onChange={(e) => updateChatConfig(e.target.value, config?.chat?.fallback || 'openai', config?.chat?.tertiary || 'openrouter', true)}
               >
-                <option value="gemini">Google Gemini (Padrão)</option>
+                <option value="gemini">Google Gemini</option>
                 <option value="openai">OpenAI GPT-4o</option>
+                <option value="openrouter">OpenRouter</option>
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-tighter">Provedor de Fallback</label>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-tighter">Fallback (2º)</label>
               <select 
                 disabled={isSavingChat}
                 className="w-full p-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500/20 outline-none transition-all cursor-pointer disabled:bg-gray-50"
                 value={config?.chat?.fallback || 'openai'}
-                onChange={(e) => updateChatConfig(config?.chat?.primary || 'gemini', e.target.value, config?.chat?.useFallback ?? true)}
+                onChange={(e) => updateChatConfig(config?.chat?.primary || 'gemini', e.target.value, config?.chat?.tertiary || 'openrouter', true)}
               >
                 <option value="gemini">Google Gemini</option>
-                <option value="openai">OpenAI GPT-4o (Recomendado)</option>
+                <option value="openai">OpenAI GPT-4o</option>
+                <option value="openrouter">OpenRouter</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-tighter">Emergência (3º)</label>
+              <select 
+                disabled={isSavingChat}
+                className="w-full p-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500/20 outline-none transition-all cursor-pointer disabled:bg-gray-50"
+                value={config?.chat?.tertiary || 'openrouter'}
+                onChange={(e) => updateChatConfig(config?.chat?.primary || 'gemini', config?.chat?.fallback || 'openai', e.target.value, true)}
+              >
+                <option value="gemini">Google Gemini</option>
+                <option value="openai">OpenAI GPT-4o</option>
+                <option value="openrouter">OpenRouter</option>
               </select>
             </div>
           </div>
@@ -247,10 +271,11 @@ export function IntegrationsView() {
             A alternância ocorre automaticamente em milissegundos se houver falha na camada anterior.
           </p>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             {[
               { id: 'gemini', label: 'Gemini AI' },
               { id: 'openai', label: 'OpenAI GPT-4o' },
+              { id: 'openrouter', label: 'OpenRouter' },
               { id: 'elevenlabs', label: 'ElevenLabs TTS' },
               { id: 'cloudinary', label: 'Cloudinary CDN' }
             ].map((srv) => (

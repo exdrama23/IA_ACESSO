@@ -5,13 +5,11 @@ import { getCostSummary } from '../services/costTracker';
 import { sendIntegrationVerificationEmail } from '../services/email';
 import { resetGeminiState } from '../ai/gemini';
 import { resetOpenAIState } from '../ai/openai';
+import { resetOpenRouterState } from '../ai/openrouter';
 import { prisma } from '../lib/prisma';
 
-// 🔴 DESABILITAR TEMPORARIAMENTE: Troque para false para desativar envio de emails de verificação
 const ENABLE_EMAIL_VERIFICATION = false;
 
-// 🔴 SKIP VERIFICAÇÃO: Troque para false para EXIGIR código de verificação
-// Se true: usuário pode salvar chave sem digite código
 const SKIP_VERIFICATION = true;
 
 export async function getUserProfile(req: Request, res: Response) {
@@ -49,8 +47,6 @@ export async function getUserProfile(req: Request, res: Response) {
     res.status(500).json({ error: 'Erro ao obter perfil do administrador' });
   }
 }
-
-// ============ CALENDÁRIO ============
 
 export async function getCalendarEvents(req: Request, res: Response) {
   try {
@@ -144,8 +140,6 @@ export async function deleteCalendarEvent(req: Request, res: Response) {
   }
 }
 
-// ============ INTEGRAÇÕES (SEGURANÇA) ============
-
 export async function requestIntegrationChange(req: Request, res: Response) {
   try {
     const user = (req as any).user;
@@ -160,17 +154,17 @@ export async function requestIntegrationChange(req: Request, res: Response) {
       ex: 900
     });
 
-    // SE SKIP_VERIFICATION = true: libera direto sem verificação
+    console.log(`[INTEGRATION] Requisição de mudança - Usuário: ${user.id}, Serviço: ${service}`);
+
     if (SKIP_VERIFICATION) {
       const authToken = Math.random().toString(36).substring(7);
       await redis.set(`integration:authorized:${user.id}:${service}`, authToken, {
         ex: 300
       });
-      console.log(`[INTEGRATION] 🚀 MODO DEV: Verificação saltada. Token autorizado direto!`);
+      console.log(`[INTEGRATION] MODO DEV: Verificação saltada. Token: ${authToken.substring(0, 5)}... salvo no Redis (TTL: 300s)`);
       return res.json({ status: 'ok', authToken, message: 'Autorizado para configurar (modo dev)' });
     }
 
-    // Enviar email com código de verificação
     if (ENABLE_EMAIL_VERIFICATION) {
       try {
         await sendIntegrationVerificationEmail(
@@ -179,13 +173,13 @@ export async function requestIntegrationChange(req: Request, res: Response) {
           service,
           user.name
         );
-        console.log(`[INTEGRATION] Código de verificação enviado para ${user.email}`);
+        console.log(`[INTEGRATION] Email de verificação enviado para ${user.email}`);
       } catch (emailError) {
         console.error('[INTEGRATION] Erro ao enviar email:', emailError);
         return res.status(500).json({ error: 'Falha ao enviar código de verificação por email' });
       }
     } else {
-      console.log(`[INTEGRATION] 🚀 MODO DEV: Email desabilitado. Código: ${code}`);
+      console.log(`[INTEGRATION] MODO DEV: Email desabilitado. Código: ${code}`);
     }
 
     res.json({ status: 'ok', message: 'Código enviado para o e-mail cadastrado' });
@@ -222,33 +216,39 @@ export async function updateIntegrationKey(req: Request, res: Response) {
     const user = (req as any).user;
     const { service, key, authToken } = req.body;
 
+    console.log(`[INTEGRATION] Atualizando chave - Usuário: ${user?.id}, Serviço: ${service}, Token recebido: ${authToken ? 'Sim' : 'Não'}`);
+
     const savedAuth = await redis.get(`integration:authorized:${user.id}:${service}`);
+    
+    console.log(`[INTEGRATION] Token salvo no Redis: ${savedAuth ? 'Encontrado' : 'NÃO ENCONTRADO'}`);
+    console.log(`[INTEGRATION] Comparação: '${savedAuth}' === '${authToken}' = ${String(savedAuth) === authToken}`);
 
     if (!savedAuth || String(savedAuth) !== authToken) {
+      console.error(`[INTEGRATION] Autorização falhou!`);
       return res.status(403).json({ error: 'Não autorizado. Realize a verificação por e-mail primeiro.' });
     }
 
-    // Salvar a chave de forma segura no Redis
-    await redis.set(`secret:key:${service}`, key);
-    
-    // Resetar o estado das IAs para voltarem a usar a principal se for uma chave de IA
+    const keyName = service.includes('backup') ? `secret:key:${service}` : `secret:key:${service}_primary`;
+    await redis.set(keyName, key);
+    console.log(`[INTEGRATION] Chave salva em Redis: ${keyName}`);
+
     if (service.startsWith('gemini')) {
       resetGeminiState();
     } else if (service.startsWith('openai')) {
       resetOpenAIState();
+    } else if (service.startsWith('openrouter')) {
+      resetOpenRouterState();
     }
 
-    // Invalida cache de configurações se necessário
     invalidateConfigCache();
 
+    console.log(`[INTEGRATION] Chave do serviço ${service} atualizada com sucesso`);
     res.json({ status: 'ok', message: `Chave do serviço ${service} atualizada com sucesso` });
   } catch (error) {
     console.error('[ADMIN] Erro salvar chave:', error);
     res.status(500).json({ error: 'Falha ao salvar chave de integração' });
   }
 }
-
-// ============ MÉTRICAS E NOTIFICAÇÕES ============
 
 export async function getMetricsDetailed(req: Request, res: Response) {
   try {
@@ -286,7 +286,6 @@ export async function getMetricsDetailed(req: Request, res: Response) {
     const total = hits + parseInt(missesStr);
     const cacheHitRate = (hits / total) * 100;
 
-    // 1. Contagem de Usuários Reais Ativos (Sessions únicas nos últimos 30 min)
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
     const activeSessions = await prisma.chatHistory.groupBy({
       by: ['sessionId'],
@@ -295,7 +294,6 @@ export async function getMetricsDetailed(req: Request, res: Response) {
       }
     });
 
-    // 2. Total de Requisições (Soma de todos os serviços na tabela ApiUsage)
     const totalRequestsResult = await prisma.apiUsage.aggregate({
       where: {
         date: { gte: startDate }
@@ -400,20 +398,17 @@ export async function updateNotificationPreferences(req: Request, res: Response)
   }
 }
 
-// ============ DASHBOARD OVERVIEW ============
 
 export async function getAdminDashboard(req: Request, res: Response) {
   try {
     const config = await getConfig();
     const costSummary = await getCostSummary();
 
-    // 1. Histórico de Alterações de Configuração (do Redis)
     const redisHistory = await redis.lrange('config:history', 0, 5);
     const configHistory = redisHistory.map(h => {
       try { return JSON.parse(h as string); } catch (e) { return h; }
     });
 
-    // 2. Histórico de Perguntas do Chat (do Prisma)
     const chatHistoryDb = await prisma.chatHistory.findMany({
       select: {
         question: true,

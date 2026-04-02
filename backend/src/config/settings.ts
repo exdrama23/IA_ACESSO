@@ -3,7 +3,7 @@ import { redis } from '../cache/redis';
 export type EmbeddingStrategy = 'tfidf' | 'gemini' | 'hybrid';
 export type TTSModel = 'elevenlabs' | 'google';
 export type StorageType = 'cloudinary' | 'redis';
-export type AIProvider = 'gemini' | 'openai';
+export type AIProvider = 'gemini' | 'openai' | 'openrouter';
 
 export interface SystemConfig {
   embedding: {
@@ -14,6 +14,7 @@ export interface SystemConfig {
   chat: {
     primary: AIProvider;
     fallback: AIProvider;
+    tertiary: AIProvider;
     useFallback: boolean;
   };
   audio: {
@@ -45,6 +46,7 @@ const DEFAULT_CONFIG: SystemConfig = {
   chat: {
     primary: 'gemini',
     fallback: 'openai',
+    tertiary: 'openrouter',
     useFallback: true
   },
   audio: {
@@ -93,11 +95,12 @@ export async function loadConfig(): Promise<SystemConfig> {
 
     const chatPrimary = (await redis.get('config:chat:primary')) as AIProvider || 'gemini';
     const chatFallback = (await redis.get('config:chat:fallback')) as AIProvider || 'openai';
-    const chatUseFallback = (await redis.get('config:chat:useFallback')) === 'true';
+    const chatTertiary = (await redis.get('config:chat:tertiary')) as AIProvider || 'openrouter';
+    const chatUseFallback = (await redis.get('config:chat:useFallback')) !== 'false';
 
     const config: SystemConfig = {
       embedding: { strategy, tfidf_threshold: tfidfThreshold, gemini_threshold: geminiThreshold },
-      chat: { primary: chatPrimary, fallback: chatFallback, useFallback: chatUseFallback },
+      chat: { primary: chatPrimary, fallback: chatFallback, tertiary: chatTertiary, useFallback: chatUseFallback },
       audio: { storage, ttl_seconds: ttl },
       tts: { model: ttsModel, voiceId: voiceId, availableVoices: availableVoices },
       limits: { max_audios_per_session: maxAudios, max_request_size_mb: 10 },
@@ -127,6 +130,7 @@ export async function saveConfig(newConfig: SystemConfig, adminEmail: string): P
       'config:embedding:gemini_threshold': newConfig.embedding.gemini_threshold.toString(),
       'config:chat:primary': newConfig.chat.primary,
       'config:chat:fallback': newConfig.chat.fallback,
+      'config:chat:tertiary': newConfig.chat.tertiary,
       'config:chat:useFallback': newConfig.chat.useFallback.toString(),
       'config:audio:storage': newConfig.audio.storage,
       'config:audio:ttl_seconds': newConfig.audio.ttl_seconds.toString(),

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { 
   Search, RefreshCw, ChevronLeft, ChevronRight, LayoutPanelLeft, 
   Grid, Layers, Table2, ChevronsUpDown, Filter, Columns,
-  Database
+  Database, Check, X
 } from 'lucide-react';
 import { API_URL } from '../../services/api';
 
@@ -234,7 +234,7 @@ export function DatabaseVisualizerView() {
                       
                       if (val === null) displayVal = <span className="text-gray-300 italic">null</span>;
                       else if (typeof val === 'object') displayVal = <span className="text-blue-400 font-mono text-[10px]">JSON</span>;
-                      else if (typeof val === 'boolean') displayVal = val ? '✅' : '❌';
+                      else if (typeof val === 'boolean') displayVal = val ? <Check className="w-4 h-4 text-green-600" /> : <X className="w-4 h-4 text-red-600" />;
                       else if (col.toLowerCase().includes('date') || col.toLowerCase().includes('at')) {
                         displayVal = new Date(val).toLocaleString();
                       }

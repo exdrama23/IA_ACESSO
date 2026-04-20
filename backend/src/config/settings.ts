@@ -1,4 +1,4 @@
-import { redis } from '../cache/redis';
+import { client } from '../cache/redis';
 
 export type EmbeddingStrategy = 'tfidf' | 'gemini' | 'hybrid';
 export type TTSModel = 'elevenlabs' | 'google';
@@ -39,7 +39,7 @@ export interface SystemConfig {
 
 const DEFAULT_CONFIG: SystemConfig = {
   embedding: {
-    strategy: 'tfidf',           
+    strategy: 'hybrid',           
     tfidf_threshold: 0.75,
     gemini_threshold: 0.85
   },
@@ -73,30 +73,30 @@ const DEFAULT_CONFIG: SystemConfig = {
 
 export async function loadConfig(): Promise<SystemConfig> {
   try {
-    const strategy = (await redis.get('config:embedding:strategy')) as EmbeddingStrategy;
+    const strategy = (await client.get('config:embedding:strategy')) as EmbeddingStrategy;
     
     if (!strategy) {
       console.log('[CONFIG] Usando padrões');
       return DEFAULT_CONFIG;
     }
 
-    const tfidfThreshold = parseFloat(await redis.get('config:embedding:tfidf_threshold') || '0.75');
-    const geminiThreshold = parseFloat(await redis.get('config:embedding:gemini_threshold') || '0.85');
-    const storage = (await redis.get('config:audio:storage')) as StorageType;
-    const ttsModel = (await redis.get('config:tts:model')) as TTSModel;
-    const ttl = parseInt(await redis.get('config:cache:ttl_seconds') || '259200');
-    const maxAudios = parseInt(await redis.get('config:cache:max_per_session') || '100');
+    const tfidfThreshold = parseFloat(await client.get('config:embedding:tfidf_threshold') || '0.75');
+    const geminiThreshold = parseFloat(await client.get('config:embedding:gemini_threshold') || '0.85');
+    const storage = (await client.get('config:audio:storage')) as StorageType;
+    const ttsModel = (await client.get('config:tts:model')) as TTSModel;
+    const ttl = parseInt(await client.get('config:cache:ttl_seconds') || '259200');
+    const maxAudios = parseInt(await client.get('config:cache:max_per_session') || '100');
 
-    const voiceId: string = (await redis.get('config:tts:voiceId')) as string || 'hpp4J3VqNfWAUOO0d1Us';
-    const availableVoicesStr = await redis.get('config:tts:availableVoices');
+    const voiceId: string = (await client.get('config:tts:voiceId')) as string || 'hpp4J3VqNfWAUOO0d1Us';
+    const availableVoicesStr = await client.get('config:tts:availableVoices');
     const availableVoices: { id: string; name: string }[] = availableVoicesStr 
       ? JSON.parse(availableVoicesStr as string) 
       : DEFAULT_CONFIG.tts.availableVoices;
 
-    const chatPrimary = (await redis.get('config:chat:primary')) as AIProvider || 'gemini';
-    const chatFallback = (await redis.get('config:chat:fallback')) as AIProvider || 'openai';
-    const chatTertiary = (await redis.get('config:chat:tertiary')) as AIProvider || 'openrouter';
-    const chatUseFallback = (await redis.get('config:chat:useFallback')) !== 'false';
+    const chatPrimary = (await client.get('config:chat:primary')) as AIProvider || 'gemini';
+    const chatFallback = (await client.get('config:chat:fallback')) as AIProvider || 'openai';
+    const chatTertiary = (await client.get('config:chat:tertiary')) as AIProvider || 'openrouter';
+    const chatUseFallback = (await client.get('config:chat:useFallback')) !== 'false';
 
     const config: SystemConfig = {
       embedding: { strategy, tfidf_threshold: tfidfThreshold, gemini_threshold: geminiThreshold },
@@ -105,9 +105,9 @@ export async function loadConfig(): Promise<SystemConfig> {
       tts: { model: ttsModel, voiceId: voiceId, availableVoices: availableVoices },
       limits: { max_audios_per_session: maxAudios, max_request_size_mb: 10 },
       metadata: {
-        last_modified: parseInt(await redis.get('config:admin:last_modified') || Date.now().toString()),
-        modified_by: (await redis.get('config:admin:modified_by')) || 'system',
-        version: parseInt(await redis.get('config:admin:version') || '1')
+        last_modified: parseInt(await client.get('config:admin:last_modified') || Date.now().toString()),
+        modified_by: (await client.get('config:admin:modified_by')) || 'system',
+        version: parseInt(await client.get('config:admin:version') || '1')
       }
     };
 
@@ -121,10 +121,10 @@ export async function loadConfig(): Promise<SystemConfig> {
 
 export async function saveConfig(newConfig: SystemConfig, adminEmail: string): Promise<void> {
   try {
-    const versionStr = await redis.get('config:admin:version');
+    const versionStr = await client.get('config:admin:version');
     const version = parseInt((versionStr as string) || '0') + 1;
 
-    await redis.mset({
+    await client.mset({
       'config:embedding:strategy': newConfig.embedding.strategy,
       'config:embedding:tfidf_threshold': newConfig.embedding.tfidf_threshold.toString(),
       'config:embedding:gemini_threshold': newConfig.embedding.gemini_threshold.toString(),
@@ -141,7 +141,7 @@ export async function saveConfig(newConfig: SystemConfig, adminEmail: string): P
       'config:admin:version': version.toString()
     });
 
-    await redis.rpush(
+    await client.rpush(
       `config:history`,
       JSON.stringify({
         timestamp: Date.now(),

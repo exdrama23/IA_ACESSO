@@ -1,64 +1,50 @@
-from sentence_transformers import SentenceTransformer, losses
+from sentence_transformers import SentenceTransformer, losses, InputExample
 import json
 import os
+from torch.utils.data import DataLoader
 
 model_name = 'all-MiniLM-L6-v2'
 model = SentenceTransformer(model_name)
 
 dataset_path = 'training_data/acesso_training.json'
-
-if not os.path.exists('training_data'):
-    os.makedirs('training_data')
-
-if not os.path.exists(dataset_path):
-    example_data = [
-        {
-            "pergunta": "Como posso contratar fibra?",
-            "categoria": "Internet Fibra",
-            "variacoes": [
-                "Como faço contrato de fibra?",
-                "Preciso de internet fibra",
-                "Qual é o processo pra contratar?",
-                "Como contrato fibra da acesso?"
-            ]
-        },
-        {
-            "pergunta": "Qual o valor da fibra?",
-            "categoria": "Internet Fibra",
-            "variacoes": [
-                "Quanto custa a fibra?",
-                "Qual é o preço?",
-                "Qual o valor da internet fibra?",
-                "Qual é o custo?"
-            ]
-        }
-    ]
-    with open(dataset_path, 'w', encoding='utf-8') as f:
-        json.dump(example_data, f, indent=4, ensure_ascii=False)
+chat_history_path = 'training_data/chat_history_export.json'
 
 train_examples = []
-with open(dataset_path, 'r', encoding='utf-8') as f:
-    data = json.load(f)
-    for item in data:
-        base_question = item['pergunta']
-        for variation in item['variacoes']:
-            from sentence_transformers import InputExample
-            train_examples.append(InputExample(texts=[base_question, variation], label=1.0))
 
-train_dataloader = None
-from torch.utils.data import DataLoader
+# Carregar dados estruturados do FAQ
+if os.path.exists(dataset_path):
+    with open(dataset_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+        for item in data:
+            base_question = item['pergunta']
+            for variation in item['variacoes']:
+                train_examples.append(InputExample(texts=[base_question, variation], label=1.0))
+
+# Carregar dados reais do histórico de chat
+if os.path.exists(chat_history_path):
+    print(f"Carregando {chat_history_path} para treinamento especializado...")
+    with open(chat_history_path, 'r', encoding='utf-8') as f:
+        chat_data = json.load(f)
+        for item in chat_data:
+            # Aqui podemos adicionar lógica para parear perguntas reais com o FAQ base
+            # Por enquanto, usamos a pergunta real para fortalecer a auto-similaridade do modelo
+            train_examples.append(InputExample(texts=[item['pergunta'], item['pergunta']], label=1.0))
+
+if not train_examples:
+    print("Nenhum dado de treinamento encontrado.")
+    exit()
+
 train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=16)
-
 train_loss = losses.CosineSimilarityLoss(model)
 
-print(f"Iniciando Fine-tuning do modelo {model_name}...")
+print(f"Iniciando Fine-tuning especializado Acesso.net (Exemplos: {len(train_examples)})...")
 model.fit(
     train_objectives=[(train_dataloader, train_loss)],
     epochs=3,
-    warmup_steps=100,
+    warmup_steps=len(train_dataloader) // 10,
     show_progress_bar=True
 )
 
-output_path = 'models/acesso-embeddings-v1'
+output_path = 'models/acesso-embeddings-v2'
 model.save(output_path)
-print(f"Modelo treinado salvo em: {output_path}")
+print(f"Modelo de alta precisao salvo em: {output_path}")

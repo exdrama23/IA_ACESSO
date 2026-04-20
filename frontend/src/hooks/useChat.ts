@@ -1,13 +1,59 @@
 import { useAudioRecorder } from "./useAudioRecorder";
-import { useSpeechPlayer } from "./useSpeechPlayer";
 import { sendText } from "../services/api";
 import { useAppStore } from "../store/useAppStore";
 import { useCallback } from "react";
 
 export function useChat() {
   const { start, stop } = useAudioRecorder();
-  const { playTest } = useSpeechPlayer();
-  const { setStatus, isRecording, toggleRecording } = useAppStore();
+  const { setStatus, isRecording, toggleRecording, lastResponse, setLastResponse, setCurrentAudio } = useAppStore();
+
+  const isRepeatCommand = (text: string): boolean => {
+    const repeatPatterns = ["pode repetir", "repete", "repita", "repete aí", "de novo", "fala de novo", "outra vez", "novamente"];
+    const lowerText = text.toLowerCase().trim();
+    return repeatPatterns.some(pattern => lowerText.includes(pattern));
+  };
+
+  const playAudio = useCallback(async (audioUrl: string) => {
+    const state = useAppStore.getState();
+    if (state.currentAudio) {
+      console.log("Interrompendo audio anterior de forma absoluta...");
+      state.currentAudio.pause();
+      state.currentAudio.muted = true;
+      state.currentAudio.src = "";
+      state.currentAudio.load();
+      setCurrentAudio(null);
+    }
+
+    if (audioUrl) {
+      console.log("Iniciando áudio...");
+      setStatus("speaking");
+
+      const audio = new Audio(audioUrl);
+      setCurrentAudio(audio);
+      
+      audio.onended = () => {
+        console.log("Áudio finalizado.");
+        setStatus("idle");
+        setCurrentAudio(null);
+      };
+      
+      audio.onerror = (e) => {
+        console.error("Erro ao tocar áudio:", e);
+        setStatus("idle");
+        setCurrentAudio(null);
+      };
+
+      try {
+        await audio.play();
+      } catch (playError) {
+        console.error("Erro no play() do áudio:", playError);
+        setStatus("idle");
+        setCurrentAudio(null);
+      }
+    } else {
+      setStatus("idle");
+    }
+  }, [setStatus, setCurrentAudio]);
 
   const handleToggleChat = useCallback(async () => {
     if (!isRecording) {
@@ -33,50 +79,40 @@ export function useChat() {
           return;
         }
 
-        console.log("Enviando texto transcrito no front:", textTranscript);
-        
-        const response = await sendText(textTranscript);
+        console.log("Texto transcrito:", textTranscript);
 
+        if (isRepeatCommand(textTranscript)) {
+          console.log("[REPETIR] Detectado comando de repetição");
+          if (lastResponse && lastResponse.audioUrl) {
+            await playAudio(lastResponse.audioUrl);
+            return;
+          } else {
+            console.log("[REPETIR] Nenhuma resposta anterior para repetir");
+            setStatus("idle");
+            return;
+          }
+        }
+
+        const response = await sendText(textTranscript);
         console.log("Resposta da IA:", response.text, `(Fonte: ${response.source})`);
 
-        if (response.audioUrl) {
-          console.log("Iniciando áudio (Base64 ou URL)...");
-          setStatus("speaking");
-
-          const fullUrl = response.audioUrl.startsWith('data:') || response.audioUrl.startsWith('http')
-            ? response.audioUrl 
-            : `${response.audioUrl}`;
-
-          const audio = new Audio(fullUrl);
-          
-          audio.onplay = () => console.log("Áudio iniciado.");
-          audio.onended = () => {
-            console.log("Áudio finalizado.");
-            setStatus("idle");
-          };
-          
-          audio.onerror = async (e) => {
-            console.error("Erro ao tocar áudio do backend, usando fallback local:", e);
-            await playTest(response.text);
-          };
-
-          try {
-            await audio.play();
-          } catch (playError) {
-            console.error("Erro no play() do áudio:", playError);
-            await playTest(response.text);
-          }
-        } else {
-          console.log("Sem áudio do backend, usando síntese local.");
-          await playTest(response.text);
+        if (response.text && response.audioUrl) {
+          setLastResponse({
+            text: response.text,
+            audioUrl: response.audioUrl,
+            timestamp: Date.now()
+          });
+          console.log("[CACHE] Última resposta armazenada para repetição");
         }
+
+        await playAudio(response.audioUrl);
 
       } catch (error) {
         console.error("Falha na comunicação com o servidor:", error);
         setStatus("idle");
       }
     }
-  }, [isRecording, start, stop, playTest, setStatus, toggleRecording]);
+  }, [isRecording, start, stop, setStatus, toggleRecording, lastResponse, setLastResponse, playAudio]);
 
   return { handleToggleChat };
 }

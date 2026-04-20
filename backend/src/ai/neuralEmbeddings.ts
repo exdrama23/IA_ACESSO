@@ -5,6 +5,7 @@ import { faq, FAQItem } from "../data/faq";
 interface FAQEmbedding {
   pergunta: string;
   categoria: string;
+  resposta: string;
   embedding: number[];
   linkDirecionamento: string;
 }
@@ -12,6 +13,7 @@ interface FAQEmbedding {
 interface FAQMatch {
   categoria: string;
   perguntaSimilar: string;
+  resposta: string;
   score: number;
   linkDirecionamento: string;
 }
@@ -25,7 +27,7 @@ export class NeuralCategoryDetector {
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    console.log("[NEURAL] Inicializando Sentence-Transformers...");
+    console.log("[NEURAL] Inicializando motor de busca unificado...");
     try {
       process.env.XENOVA_ALLOW_LOCAL_MODELS = "true";
 
@@ -35,16 +37,12 @@ export class NeuralCategoryDetector {
       env.allowLocalModels = true;
       env.useBrowserCache = false;
 
-      if (env.backends && (env.backends as any).vision) {
-        (env.backends as any).vision = false;
-      }
-
       this.extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2");
 
       const cached = await this.loadEmbeddingsCache();
       if (cached) {
         this.faqEmbeddings = cached;
-        console.log(`[NEURAL] ✓ ${cached.length} embeddings carregados do cache`);
+        console.log(`[NEURAL] Base vetorial carregada do cache local (${cached.length} itens)`);
       } else {
         await this.preComputeFAQEmbeddings();
         await this.saveEmbeddingsCache();
@@ -52,7 +50,7 @@ export class NeuralCategoryDetector {
 
       this.initialized = true;
     } catch (error) {
-      console.error("[NEURAL] Erro na inicialização:", error);
+      console.error("[NEURAL] Falha critica na inicializacao neural:", error);
       throw error;
     }
   }
@@ -68,7 +66,7 @@ export class NeuralCategoryDetector {
   }
 
   private async preComputeFAQEmbeddings(): Promise<void> {
-    console.log("[NEURAL] Pre-computando embeddings para o FAQ...");
+    console.log("[NEURAL] Gerando base vetorial do FAQ...");
 
     let totalEmbeddings = 0;
 
@@ -86,6 +84,7 @@ export class NeuralCategoryDetector {
           this.faqEmbeddings.push({
             pergunta: pergunta,
             categoria: item.category,
+            resposta: item.answer,
             embedding: Array.from(output.data),
             linkDirecionamento: item.linkDirecionamento || "https://acesso.net"
           });
@@ -95,10 +94,10 @@ export class NeuralCategoryDetector {
       }
     }
 
-    console.log(`[NEURAL] ✓ Pre-computação completa (${totalEmbeddings} embeddings gerados)`);
+    console.log(`[NEURAL] Base vetorial concluida (${totalEmbeddings} itens indexados)`);
   }
 
-  async findCategoryBySimilarity(
+  async searchInFAQ(
     perguntaUsuario: string,
     threshold: number = 0.85
   ): Promise<FAQMatch | null> {
@@ -107,6 +106,19 @@ export class NeuralCategoryDetector {
     }
 
     const normalized = this.normalizeText(perguntaUsuario);
+
+    // 1. Verificacao de Match Literal (Custo Zero / Precisao Total)
+    const literalMatch = this.faqEmbeddings.find(f => this.normalizeText(f.pergunta) === normalized);
+    if (literalMatch) {
+      console.log(`[NEURAL] Match literal encontrado: "${literalMatch.pergunta}"`);
+      return {
+        categoria: literalMatch.categoria,
+        perguntaSimilar: literalMatch.pergunta,
+        resposta: literalMatch.resposta,
+        score: 1.0,
+        linkDirecionamento: literalMatch.linkDirecionamento
+      };
+    }
     
     let userEmbedding: number[];
     if (this.embeddingCache.has(normalized)) {
@@ -130,6 +142,7 @@ export class NeuralCategoryDetector {
         bestMatch = {
           categoria: faqItem.categoria,
           perguntaSimilar: faqItem.pergunta,
+          resposta: faqItem.resposta,
           score,
           linkDirecionamento: faqItem.linkDirecionamento
         };
@@ -138,10 +151,38 @@ export class NeuralCategoryDetector {
     }
 
     if (bestMatch) {
-      console.log(`[NEURAL] Match encontrado: ${bestMatch.categoria} (Score: ${bestMatch.score.toFixed(3)})`);
+      console.log(`[NEURAL] Match de alta confianca: "${bestMatch.perguntaSimilar}" (Score: ${bestMatch.score.toFixed(3)})`);
     }
 
     return bestMatch;
+  }
+
+  async getTopMatches(
+    perguntaUsuario: string,
+    topK: number = 2
+  ): Promise<FAQMatch[]> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    const normalized = this.normalizeText(perguntaUsuario);
+    const output = await this.extractor(normalized, {
+      pooling: "mean",
+      normalize: true
+    });
+    const userEmbedding = Array.from(output.data) as number[];
+
+    const matches: FAQMatch[] = this.faqEmbeddings.map(faqItem => ({
+      categoria: faqItem.categoria,
+      perguntaSimilar: faqItem.pergunta,
+      resposta: faqItem.resposta,
+      score: this.cosineSimilarity(userEmbedding, faqItem.embedding),
+      linkDirecionamento: faqItem.linkDirecionamento
+    }));
+
+    return matches
+      .sort((a, b) => b.score - a.score)
+      .slice(0, topK);
   }
 
   private cosineSimilarity(vec1: number[], vec2: number[]): number {

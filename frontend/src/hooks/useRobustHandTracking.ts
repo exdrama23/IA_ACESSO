@@ -124,6 +124,14 @@ export function useRobustHandTracking(videoElement: HTMLVideoElement | null) {
               Math.pow(hand[4].y - hand[8].y, 2)
             );
 
+            // Gesto de Pare (Mao Aberta com Palma para Frente)
+            // Verificamos se as pontas dos 4 dedos principais estao bem acima da palma
+            const isHandOpen = 
+              hand[8].y < hand[5].y && 
+              hand[12].y < hand[9].y && 
+              hand[16].y < hand[13].y && 
+              hand[20].y < hand[17].y;
+
             if (!Number.isFinite(distance)) {
               handleMiss();
               animationFrameId = requestAnimationFrame(predict);
@@ -146,7 +154,7 @@ export function useRobustHandTracking(videoElement: HTMLVideoElement | null) {
               isHandPresentRef.current = true;
             }
 
-            setHandData(landmarks, pinchLatched.current, true);
+            setHandData(landmarks, pinchLatched.current, true, isHandOpen);
           } else {
             handleMiss();
           }

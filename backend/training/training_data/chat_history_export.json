@@ -1,0 +1,366 @@
+[
+  {
+    "pergunta": "Olá",
+    "origem": "FAQ_DIRETO"
+  },
+  {
+    "pergunta": "Olá",
+    "origem": "FAQ_DIRETO"
+  },
+  {
+    "pergunta": "Olá",
+    "origem": "FAQ_DIRETO"
+  },
+  {
+    "pergunta": "Olá",
+    "origem": "CACHE_AUDIO_HASH"
+  },
+  {
+    "pergunta": "Olá",
+    "origem": "CACHE_AUDIO_HASH"
+  },
+  {
+    "pergunta": "Oi",
+    "origem": "CACHE_AUDIO_HASH"
+  },
+  {
+    "pergunta": "Boa tarde",
+    "origem": "CACHE_AUDIO_HASH"
+  },
+  {
+    "pergunta": "tudo bem como vai",
+    "origem": "CACHE_AUDIO_HASH"
+  },
+  {
+    "pergunta": "Boa tarde",
+    "origem": "CACHE_AUDIO_HASH"
+  },
+  {
+    "pergunta": "Olá",
+    "origem": "CACHE_AUDIO_HASH"
+  },
+  {
+    "pergunta": "vocês tem telefone fixo",
+    "origem": "FAQ_DIRETO"
+  },
+  {
+    "pergunta": "vocês tem telefone fixo",
+    "origem": "CACHE_AUDIO_HASH"
+  },
+  {
+    "pergunta": "a internet é rápida",
+    "origem": "FAQ_DIRETO"
+  },
+  {
+    "pergunta": "a internet é rápida",
+    "origem": "FAQ_DIRETO"
+  },
+  {
+    "pergunta": "a internet é rápida",
+    "origem": "FAQ_DIRETO_COM_AUDIO_CACHE"
+  },
+  {
+    "pergunta": "a internet cai quando chove",
+    "origem": "FAQ_DIRETO"
+  },
+  {
+    "pergunta": "o ping é baixo para jogos",
+    "origem": "FAQ_DIRETO"
+  },
+  {
+    "pergunta": "a internet de vocês é fibra ótica mesmo",
+    "origem": "FAQ_DIRETO"
+  },
+  {
+    "pergunta": "vocês chegam até o interior",
+    "origem": "FAQ_DIRETO"
+  },
+  {
+    "pergunta": "tem acesso net na minha rua",
+    "origem": "FAQ_DIRETO"
+  },
+  {
+    "pergunta": "a empresa é legalizada",
+    "origem": "FAQ_DIRETO"
+  },
+  {
+    "pergunta": "acesso net é JF Soluções",
+    "origem": "FAQ_DIRETO"
+  },
+  {
+    "pergunta": "Qual o nome no contrato",
+    "origem": "FAQ_DIRETO"
+  },
+  {
+    "pergunta": "o que vem nos planos de fibra",
+    "origem": "FAQ_NEURAL"
+  },
+  {
+    "pergunta": "o que eu ganho assinando a vida  fibra",
+    "origem": "FAQ_NEURAL_AUDIO_REDIS_SIMILAR"
+  },
+  {
+    "pergunta": "Olá",
+    "origem": "FAQ_NEURAL"
+  },
+  {
+    "pergunta": "Olá",
+    "origem": "FAQ_NEURAL_AUDIO_REDIS_SIMILAR"
+  },
+  {
+    "pergunta": "Olá",
+    "origem": "FAQ_NEURAL_AUDIO_REDIS_SIMILAR"
+  },
+  {
+    "pergunta": "Olá",
+    "origem": "FAQ_NEURAL_AUDIO_REDIS_SIMILAR"
+  },
+  {
+    "pergunta": "Onde fica localizada a acesso",
+    "origem": "ERRO_SISTEMA_AUDIO_REDIS_SIMILAR"
+  },
+  {
+    "pergunta": "onde é acesso se localiza",
+    "origem": "ERRO_SISTEMA_AUDIO_REDIS_SIMILAR"
+  },
+  {
+    "pergunta": "tem acesso net em Aracaju",
+    "origem": "FAQ_NEURAL"
+  },
+  {
+    "pergunta": "nao entendi isso",
+    "origem": "FAQ_NEURAL"
+  },
+  {
+    "pergunta": "o que voce faz mesmo",
+    "origem": "FAQ_NEURAL"
+  },
+  {
+    "pergunta": "Oi",
+    "origem": "FAQ_NEURAL_AUDIO_REDIS_SIMILAR"
+  },
+  {
+    "pergunta": "Olá",
+    "origem": "FAQ_NEURAL"
+  },
+  {
+    "pergunta": "Olá",
+    "origem": "FAQ_NEURAL_AUDIO_DB"
+  },
+  {
+    "pergunta": "Aonde se localiza acesso.net",
+    "origem": "ERRO_SISTEMA_AUDIO_REDIS_SIMILAR"
+  },
+  {
+    "pergunta": "Aonde se localiza a acesso.net",
+    "origem": "ERRO_SISTEMA_AUDIO_REDIS_SIMILAR"
+  },
+  {
+    "pergunta": "onde se encontra acesso.net",
+    "origem": "ERRO_SISTEMA_AUDIO_REDIS_SIMILAR"
+  },
+  {
+    "pergunta": "Olá",
+    "origem": "FAQ_NEURAL_AUDIO_REDIS_SIMILAR"
+  },
+  {
+    "pergunta": "Aonde se localiza a acesso.net",
+    "origem": "ERRO_SISTEMA_AUDIO_REDIS_SIMILAR"
+  },
+  {
+    "pergunta": "Olá acesso.net vem de Quais planos",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "Oi tudo bem",
+    "origem": "FAQ_NEURAL"
+  },
+  {
+    "pergunta": "Olá quando surgiu acesso e onde ela está localizada",
+    "origem": "IA_OPENROUTER_FALLBACK"
+  },
+  {
+    "pergunta": "Olá eu queria muito saber onde é que fica localizada",
+    "origem": "IA_OPENROUTER_TERTIARY_FALLBACK"
+  },
+  {
+    "pergunta": "Olá bom dia tudo bom então eu queria muito saber qual é o melhor lugar para comer um peixe na sexta-feira Santa",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "Oi",
+    "origem": "FAQ_NEURAL_AUDIO_DB_SIMILAR"
+  },
+  {
+    "pergunta": "ela respondeu com a resposta",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "quais serviços você tem",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "quanto que a empresa fatura de um mês",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "Qual é o número da Diretoria de hoje",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "qual é o número  da lotérica  de hoje",
+    "origem": "IA_OPENROUTER_AUDIO_REDIS_SIMILAR"
+  },
+  {
+    "pergunta": "quantos funcionários tem aqui na empresa",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "vou fazer alguma coisa",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "você é amiga da Iara é inimiga",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "cobertura de internet na",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "Rua Siqueira internet Rua Siqueira Campos",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "O que é uma formação",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "a mesma coisa que ela falou aqui ela fala de novo quer ver  eu fiz o sistema bugado no sistema",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "agora se eu peguei ela tá vendo  eu peguei ela no agora da Flávia  uma coisa que a gente pergunta a ela que ela não vai saber responder será",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "que época que você  que é por causa que você nasceu que é por qual que você se criou",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "Qual foi a época que você se criou e a sua idade agora",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "tchau",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "então achei interessante o plano de saúde queria saber quanto custa",
+    "origem": "IA_OPENROUTER_TERTIARY_FALLBACK_AUDIO_DB_SIMILAR"
+  },
+  {
+    "pergunta": "Olá Então quer dizer que você é nova ia dar acesso",
+    "origem": "IA_OPENROUTER_TERTIARY_FALLBACK"
+  },
+  {
+    "pergunta": "Olá qual o seu nome",
+    "origem": "FAQ_NEURAL_AUDIO_DB_SIMILAR"
+  },
+  {
+    "pergunta": "Olá",
+    "origem": "FAQ_NEURAL_AUDIO_DB_SIMILAR"
+  },
+  {
+    "pergunta": "Olá querida",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "Olá",
+    "origem": "FAQ_NEURAL_AUDIO_DB_EXATO"
+  },
+  {
+    "pergunta": "Olá as respostas estão certas do fq né",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "Sim quero saber detalhes sobre os planos",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "pode repetir",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "pode repetir",
+    "origem": "CACHE_REDIS_AUDIO_DB_EXATO"
+  },
+  {
+    "pergunta": "Tá mas qual o CPF",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "me diga o CNPJ da empresa",
+    "origem": "FAQ_NEURAL"
+  },
+  {
+    "pergunta": "pode repetir",
+    "origem": "CACHE_REDIS_AUDIO_DB_EXATO"
+  },
+  {
+    "pergunta": "Tava aqui pensando qual era o CNPJ da empresa",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "qual é o nome de todos os funcionários da empresa",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "Qual o valor do serviço de professor",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "Me diga todos os planos",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "quais são todos os planos mesmo",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "Quais planos acesso net disponibiliza",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "mas Quais planos acesso disponibiliza",
+    "origem": "IA_OPENROUTER"
+  },
+  {
+    "pergunta": "Olá",
+    "origem": "FAQ_NEURAL_AUDIO_DB_EXATO"
+  },
+  {
+    "pergunta": "Olá",
+    "origem": "FAQ_NEURAL_AUDIO_DB_EXATO"
+  },
+  {
+    "pergunta": "tudo bem",
+    "origem": "FAQ_NEURAL_AUDIO_DB_EXATO"
+  },
+  {
+    "pergunta": "oi oi",
+    "origem": "FAQ_NEURAL"
+  },
+  {
+    "pergunta": "Quem é você",
+    "origem": "FAQ_NEURAL_AUDIO_DB_SIMILAR"
+  },
+  {
+    "pergunta": "Quais planos acesso net oferece",
+    "origem": "FAQ_NEURAL"
+  },
+  {
+    "pergunta": "Quais planos acesso net oferece",
+    "origem": "IA_OPENROUTER"
+  }
+]

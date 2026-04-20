@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { generateToken } from '../middleware/auth';
-import { redis } from '../cache/redis';
+import { client } from '../cache/redis';
 import { prisma } from '../lib/prisma';
 import { sendPasswordResetEmailWithName } from '../services/email';
 
@@ -12,15 +12,18 @@ export async function login(req: Request, res: Response) {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      
-      await prisma.loginAttempt.create({
-        data: {
-          email: email || 'unknown',
-          success: false,
-          ipAddress: req.ip || undefined,
-          userAgent: req.get('user-agent')
-        }
-      });
+      try {
+        await prisma.loginAttempt.create({
+          data: {
+            email: email || 'unknown',
+            success: false,
+            ipAddress: req.ip || undefined,
+            userAgent: req.get('user-agent')
+          }
+        });
+      } catch (dbError) {
+        console.warn('[AUTH] Falha ao registrar tentativa de login:', dbError);
+      }
       return res.status(400).json({ error: 'Email e senha obrigatórios' });
     }
 
@@ -31,25 +34,32 @@ export async function login(req: Request, res: Response) {
     const isPasswordValid = user && await bcrypt.compare(password, user.password);
 
     if (!user || !isPasswordValid) {
-      
-      await prisma.loginAttempt.create({
-        data: {
-          userId: user?.id,
-          email,
-          success: false,
-          ipAddress: req.ip || undefined,
-          userAgent: req.get('user-agent')
-        }
-      });
+      try {
+        await prisma.loginAttempt.create({
+          data: {
+            userId: user?.id,
+            email,
+            success: false,
+            ipAddress: req.ip || undefined,
+            userAgent: req.get('user-agent')
+          }
+        });
+      } catch (dbError) {
+        console.warn('[AUTH] Falha ao registrar tentativa de login falha:', dbError);
+      }
 
       console.warn(`[AUTH] Tentativa de login falha: ${email}`);
 
-      const attemptKey = `login_attempts:${email}`;
-      const attempts = parseInt(await redis.get(attemptKey) || '0') + 1;
-      await redis.set(attemptKey, attempts, { ex: 900 }); 
-      
-      if (attempts >= 5) {
-        return res.status(429).json({ error: 'Muitas tentativas. Tente novamente em 15 minutos' });
+      try {
+        const attemptKey = `login_attempts:${email}`;
+        const attempts = parseInt(await client.get(attemptKey) || '0') + 1;
+        await client.setex(attemptKey, 900, String(attempts)); 
+        
+        if (attempts >= 5) {
+          return res.status(429).json({ error: 'Muitas tentativas. Tente novamente em 15 minutos' });
+        }
+      } catch (redisError) {
+        console.warn('[AUTH] Erro ao acessar Redis:', redisError);
       }
       
       return res.status(401).json({ error: 'Credenciais inválidas' });
@@ -59,29 +69,41 @@ export async function login(req: Request, res: Response) {
       return res.status(403).json({ error: 'Apenas administradores podem acessar esta área' });
     }
 
-    await prisma.loginAttempt.create({
-      data: {
-        userId: user.id,
-        email: user.email,
-        success: true,
-        ipAddress: req.ip || undefined,
-        userAgent: req.get('user-agent')
-      }
-    });
+    try {
+      await prisma.loginAttempt.create({
+        data: {
+          userId: user.id,
+          email: user.email,
+          success: true,
+          ipAddress: req.ip || undefined,
+          userAgent: req.get('user-agent')
+        }
+      });
+    } catch (dbError) {
+      console.warn('[AUTH] Falha ao registrar login bem-sucedido:', dbError);
+    }
 
     const token = generateToken(user.id, email, user.role as 'admin' | 'user');
 
-    await redis.del(`login_attempts:${email}`);
+    try {
+      await client.del(`login_attempts:${email}`);
+    } catch (redisError) {
+      console.warn('[AUTH] Erro ao limpar tentativas de login do Redis:', redisError);
+    }
 
-    await prisma.auditLog.create({
-      data: {
-        userId: user.id,
-        action: 'login',
-        status: 'success',
-        ipAddress: req.ip || undefined,
-        userAgent: req.get('user-agent')
-      }
-    });
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: 'login',
+          status: 'success',
+          ipAddress: req.ip || undefined,
+          userAgent: req.get('user-agent')
+        }
+      });
+    } catch (dbError) {
+      console.warn('[AUTH] Falha ao registrar audit log:', dbError);
+    }
 
     res.json({
       status: 'ok',
@@ -90,8 +112,20 @@ export async function login(req: Request, res: Response) {
       expires_in: '24h'
     });
   } catch (error) {
-    console.error('[AUTH] Erro login:', error);
-    res.status(500).json({ error: 'Erro ao fazer login' });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    console.error('[AUTH] Erro no login:', {
+      message: errorMessage,
+      stack: errorStack,
+      body: req.body,
+      timestamp: new Date().toISOString()
+    });
+    
+    res.status(500).json({ 
+      error: 'Erro ao fazer login',
+      details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+    });
   }
 }
 
@@ -113,7 +147,7 @@ export async function logout(req: Request, res: Response) {
     }
 
     if (token) {
-      await redis.set(`token:blacklist:${token}`, '1', { ex: 86400 });
+      await client.setex(`token:blacklist:${token}`, 86400, '1');
     }
 
     res.json({ status: 'ok', message: 'Logout bem-sucedido' });
@@ -134,7 +168,7 @@ export async function forgotPassword(req: Request, res: Response) {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     
     const resetKey = `password_reset:${email.toLowerCase()}`;
-    await redis.set(resetKey, code, { ex: 15 * 60 });
+    await client.setex(resetKey, 15 * 60, code);
 
     if (ENABLE_EMAIL_VERIFICATION) {
       await sendPasswordResetEmailWithName(email, code, user.name);
@@ -176,7 +210,7 @@ export async function resetPassword(req: Request, res: Response) {
     }
 
     const resetKey = `password_reset:${email.toLowerCase()}`;
-    const savedCode = await redis.get(resetKey);
+    const savedCode = await client.get(resetKey);
 
     if (!savedCode || String(savedCode) !== String(code)) {
       return res.status(400).json({ error: 'Código inválido ou expirado' });
@@ -191,7 +225,7 @@ export async function resetPassword(req: Request, res: Response) {
       }
     });
 
-    await redis.del(resetKey);
+    await client.del(resetKey);
 
     res.json({ status: 'ok', message: 'Senha alterada com sucesso' });
   } catch (error) {

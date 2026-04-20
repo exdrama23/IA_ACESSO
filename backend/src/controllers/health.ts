@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { redis } from '../cache/redis';
+import { client } from '../cache/redis';
 
 export async function healthCheck(req: Request, res: Response) {
   const checks: any = {
@@ -13,7 +13,7 @@ export async function healthCheck(req: Request, res: Response) {
   };
 
   try {
-    const ping = await redis.ping();
+    const ping = await client.ping();
     checks.services.redis = ping === 'PONG' ? 'ok' : 'error';
   } catch (error) {
     checks.services.redis = 'error';

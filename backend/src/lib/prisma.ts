@@ -1,9 +1,25 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
+import dotenv from 'dotenv';
+import path from 'path';
 
-const connectionString = `${process.env.DATABASE_URL}`;
-const pool = new pg.Pool({ connectionString });
+// Garantir que .env está carregado
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error('DATABASE_URL não foi configurado no arquivo .env');
+}
+
+const pool = new pg.Pool({
+  connectionString,
+  max: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000
+});
+
 const adapter = new PrismaPg(pool as any);
 
 declare global {

@@ -1,12 +1,18 @@
-import { Redis } from "@upstash/redis";
+import redis from "ioredis";
 import dotenv from "dotenv";
 import path from "path";
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
-export const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+export const client = new redis(process.env.REDIS_URL!);
+
+// Verificar conexão
+client.on('connect', () => {
+  console.log('[REDIS] ✓ Conectado ao Redis Labs');
+});
+
+client.on('error', (err) => {
+  console.error('[REDIS] ✗ Erro na conexão:', err.message);
 });
 
 export const THREE_DAYS_SECONDS = 60 * 60 * 24 * 3;
@@ -45,34 +51,32 @@ export function gerarChave(pergunta: string, tipo: 'text' | 'audio' = 'text'): s
 
 export async function getCache(key: string) {
   try {
-    return await redis.get(key);
+    const value = await client.get(key);
+    return value ? JSON.parse(value) : null;
   } catch (err) {
-    console.error("Erro Upstash Get:", err);
+    console.error("[REDIS] Erro ao obter cache:", err);
     return null;
   }
 }
 
 export async function setCache(key: string, value: any, ttlSeconds: number = THREE_DAYS_SECONDS) {
   try {
-    await redis.set(key, value, { ex: ttlSeconds });
+    await client.setex(key, ttlSeconds, JSON.stringify(value));
 
     if (ENABLE_CACHE_LIMIT) {
       const cacheKeysListKey = "cache:all_keys";
 
-      const allKeys = (await redis.zrange(cacheKeysListKey, 0, -1)) as string[];
+      const allKeys = (await client.zrange(cacheKeysListKey, 0, -1)) as string[];
       
       if (allKeys.length >= MAX_CACHE_SIZE) {
         
         const oldestKey = allKeys[0];
-        await redis.del(oldestKey);
-        await redis.zrem(cacheKeysListKey, oldestKey);
+        await client.del(oldestKey);
+        await client.zrem(cacheKeysListKey, oldestKey);
         console.log(`[CACHE LIMITE] Removed oldest cache key: ${oldestKey}`);
       }
 
-      await redis.zadd(cacheKeysListKey, {
-        score: Date.now(),
-        member: key
-      });
+      await client.zadd(cacheKeysListKey, Date.now(), key);
       
       console.log(`[CACHE] Requisição armazenada em cache (com limite de ${MAX_CACHE_SIZE}): ${key}`);
     } else {
@@ -90,8 +94,8 @@ export interface ChatMessage {
 
 export async function getConversationHistory(sessionId: string): Promise<ChatMessage[]> {
   try {
-    const history = await redis.get<ChatMessage[]>(`history:${sessionId}`);
-    return history || [];
+    const history = await client.get(`history:${sessionId}`);
+    return history ? JSON.parse(history) : [];
   } catch (err) {
     console.error("Erro ao obter histórico:", err);
     return [];
@@ -108,7 +112,7 @@ export async function addConversationHistory(sessionId: string, userMsg: string,
       history = history.slice(-120);
     }
     
-    await redis.set(`history:${sessionId}`, history, { ex: THREE_DAYS_SECONDS });
+    await client.setex(`history:${sessionId}`, THREE_DAYS_SECONDS, JSON.stringify(history));
   } catch (err) {
     console.error("Erro ao salvar histórico:", err);
   }
@@ -132,7 +136,7 @@ export async function setAudioCacheHash(
   try {
     const hashKey = `audio_cache:${sessionId}:${entry.timestamp}`;
     
-    await redis.hset(hashKey, {
+    await client.hset(hashKey, {
       pergunta_original: entry.pergunta_original,
       resposta: entry.resposta,
       embedding: entry.embedding,
@@ -142,12 +146,9 @@ export async function setAudioCacheHash(
       timestamp: entry.timestamp.toString()
     });
 
-    await redis.expire(hashKey, ttlSeconds);
+    await client.expire(hashKey, ttlSeconds);
 
-    await redis.zadd(`audio_cache:${sessionId}:index`, {
-      score: entry.similarity_score,
-      member: entry.timestamp.toString()
-    });
+    await client.zadd(`audio_cache:${sessionId}:index`, entry.similarity_score, entry.timestamp.toString());
 
     if (ENABLE_CACHE_LIMIT) {
       await enforceCacheLimit(sessionId, MAX_CACHE_SIZE);
@@ -169,14 +170,14 @@ export async function findSimilarAudioInHistory(
   try {
     
     const indexKey = `audio_cache:${sessionId}:index`;
-    const timestamps = (await redis.zrange(indexKey, 0, -1)).reverse(); 
+    const timestamps = (await client.zrange(indexKey, 0, -1)).reverse(); 
     
     if (!timestamps || timestamps.length === 0) return null;
 
     for (const tsStr of timestamps) {
       const hashKey = `audio_cache:${sessionId}:${tsStr}`;
 
-      const cachedEntry = await redis.hgetall(hashKey) as Record<string, string>;
+      const cachedEntry = await client.hgetall(hashKey) as Record<string, string>;
       if (!cachedEntry || !cachedEntry.embedding) continue;
 
       try {
@@ -222,13 +223,13 @@ export async function findSimilarAudioInHistory(
 export async function listAudioCacheBySession(sessionId: string): Promise<AudioCacheEntry[]> {
   try {
     const indexKey = `audio_cache:${sessionId}:index`;
-    const timestamps = await redis.zrange(indexKey, 0, -1);
+    const timestamps = await client.zrange(indexKey, 0, -1);
     
     const entries: AudioCacheEntry[] = [];
     
     for (const tsStr of timestamps) {
       const hashKey = `audio_cache:${sessionId}:${tsStr}`;
-      const cachedEntry = await redis.hgetall(hashKey) as Record<string, string>;
+      const cachedEntry = await client.hgetall(hashKey) as Record<string, string>;
       
       if (cachedEntry) {
         entries.push({
@@ -253,14 +254,14 @@ export async function listAudioCacheBySession(sessionId: string): Promise<AudioC
 export async function clearAudioCacheBySession(sessionId: string): Promise<void> {
   try {
     const indexKey = `audio_cache:${sessionId}:index`;
-    const timestamps = await redis.zrange(indexKey, 0, -1);
+    const timestamps = await client.zrange(indexKey, 0, -1);
     
     for (const tsStr of timestamps) {
       const hashKey = `audio_cache:${sessionId}:${tsStr}`;
-      await redis.del(hashKey);
+      await client.del(hashKey);
     }
     
-    await redis.del(indexKey);
+    await client.del(indexKey);
     console.log(`[REDIS] Cache de áudios limpo para sessão: ${sessionId}`);
   } catch (err) {
     console.error('[REDIS] Erro ao limpar cache:', err);
@@ -270,15 +271,15 @@ export async function clearAudioCacheBySession(sessionId: string): Promise<void>
 export async function enforceCacheLimit(sessionId: string, maxCacheSize: number = MAX_CACHE_SIZE): Promise<void> {
   try {
     const indexKey = `audio_cache:${sessionId}:index`;
-    const timestamps = (await redis.zrange(indexKey, 0, -1)) as string[];
+    const timestamps = (await client.zrange(indexKey, 0, -1)) as string[];
 
     if (timestamps.length > maxCacheSize) {
       const itemsToRemove = timestamps.slice(0, timestamps.length - maxCacheSize);
       
       for (const tsStr of itemsToRemove) {
         const hashKey = `audio_cache:${sessionId}:${tsStr}`;
-        await redis.del(hashKey);
-        await redis.zrem(indexKey, tsStr);
+        await client.del(hashKey);
+        await client.zrem(indexKey, tsStr);
         console.log(`[CACHE LIMITE] Removed old entry: ${hashKey}`);
       }
       
@@ -300,12 +301,12 @@ export async function getCacheStats(sessionId?: string): Promise<{
     let totalText = 0;
     const audioEntriesBySession: { [key: string]: number } = {};
 
-    const textCacheKeys = (await redis.zrange("cache:all_keys", 0, -1)) as string[];
+    const textCacheKeys = (await client.zrange("cache:all_keys", 0, -1)) as string[];
     totalText = textCacheKeys.length;
 
     if (sessionId) {
       const indexKey = `audio_cache:${sessionId}:index`;
-      const timestamps = (await redis.zrange(indexKey, 0, -1)) as string[];
+      const timestamps = (await client.zrange(indexKey, 0, -1)) as string[];
       totalAudio = timestamps.length;
       audioEntriesBySession[sessionId] = totalAudio;
     } else {

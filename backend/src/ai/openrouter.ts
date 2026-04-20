@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { trackAICall } from "../services/costTracker";
-import { redis } from "../cache/redis";
+import { client } from "../cache/redis";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -33,9 +33,9 @@ async function getNextOpenRouterClient(): Promise<OpenAI | null> {
   }
 
   if (activeApiKeyIndex === 1) {
-    let primaryKey = await redis.get("secret:key:openrouter_primary");
+    let primaryKey = await client.get("secret:key:openrouter_primary");
     if (!primaryKey) {
-      primaryKey = await redis.get("secret:key:openrouter");
+      primaryKey = await client.get("secret:key:openrouter");
     }
     if (primaryKey) {
       console.log('[OPENROUTER] Usando chave principal do admin (secret:key:openrouter_primary ou secret:key:openrouter)');
@@ -53,7 +53,7 @@ async function getNextOpenRouterClient(): Promise<OpenAI | null> {
   }
 
   if (activeApiKeyIndex === 2) {
-    const b1 = await redis.get("secret:key:openrouter_backup_1");
+    const b1 = await client.get("secret:key:openrouter_backup_1");
     if (b1) {
       console.log('[OPENROUTER] Usando backup 1 (secret:key:openrouter_backup_1)');
       currentClient = new OpenAI({
@@ -70,7 +70,7 @@ async function getNextOpenRouterClient(): Promise<OpenAI | null> {
   }
 
   if (activeApiKeyIndex === 3) {
-    const b2 = await redis.get("secret:key:openrouter_backup_2");
+    const b2 = await client.get("secret:key:openrouter_backup_2");
     if (b2) {
       console.log('[OPENROUTER] Usando backup 2 (secret:key:openrouter_backup_2)');
       currentClient = new OpenAI({
@@ -119,14 +119,21 @@ export async function askOpenRouter(question: string, context: string = "", hist
       const messages: any[] = [
         {
           role: "system",
-          content: `Você é a voz oficial da ACESSO.NET. Responda de forma rápida e amigável.
+          content: `Você é o Assistente Virtual oficial da ACESSO.NET. Sua missão é fornecer informações EXATAS baseadas na nossa base de conhecimento.
+
+DIRETRIZES DE PENSAMENTO:
+1. Analise a pergunta do cliente.
+2. Verifique se a resposta exata está na "Base de Conhecimento" abaixo.
+3. Se a informação não estiver no FAQ, diga que não tem essa informação específica e peça para ele falar com um atendente no 0800 731 1030.
+4. Priorize sempre os dados da ACESSO.NET sobre qualquer conhecimento geral.
+
 Base de Conhecimento (FAQ):
-${context ? context : "Nenhuma informação específica encontrada."}
-REGRAS:
-1. Máximo 2 frases.
-2. Linguagem natural e direta.
-3. Se a informação estiver no FAQ, use-a.
-4. NUNCA use Markdown (como * ou **), pois o texto será lido por voz.`
+${context ? context : "Nenhuma informação específica encontrada no FAQ."}
+
+REGRAS DE RESPOSTA:
+- Responda em no máximo 2 frases curtas e diretas.
+- PROIBIDO usar Markdown (negrito, itálico, asteriscos), pois sua resposta será convertida em áudio.
+- NUNCA invente preços ou planos que não estejam no FAQ.`
         }
       ];
 

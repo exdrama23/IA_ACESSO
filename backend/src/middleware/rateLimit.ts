@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { redis } from '../cache/redis';
+import { client } from '../cache/redis';
 
 export interface RateLimitConfig {
   windowMs: number;    
@@ -14,10 +14,10 @@ export function createRateLimiter(config: RateLimitConfig) {
       const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
       const key = `ratelimit:${ip}`;
       
-      const count = await redis.incr(key);
+      const count = await client.incr(key);
 
       if (count === 1) {
-        await redis.expire(key, Math.ceil(config.windowMs / 1000));
+        await client.expire(key, Math.ceil(config.windowMs / 1000));
       }
 
       res.set('X-RateLimit-Limit', config.maxRequests.toString());

@@ -25,7 +25,11 @@ import {
   updateIntegrationKey,
   updateNotificationPreferences,
   markNotificationRead,
-  deleteNotification
+  deleteNotification,
+  getVoiceCacheStatistics,
+  limparVoiceCacheAntigo,
+  listarVoiceCache,
+  resetConfigToDefault
 } from "./controllers/admin";
 import { getMetrics, getAuditLogs } from "./controllers/metrics";
 import { login, logout, forgotPassword, resetPassword, changePassword } from "./controllers/auth";
@@ -71,6 +75,7 @@ app.post("/api/chat",
 
 app.get("/admin/dashboard", verifyToken, requireAdmin, getAdminDashboard);
 app.post("/admin/config", verifyToken, requireAdmin, updateSystemConfig);
+app.post("/admin/config/reset-to-default", verifyToken, requireAdmin, resetConfigToDefault);
 app.get("/admin/cache-stats", verifyToken, requireAdmin, getCacheStatistics);
 app.get("/admin/metrics", verifyToken, requireAdmin, getMetrics);
 app.get("/admin/audit-logs", verifyToken, requireAdmin, getAuditLogs);
@@ -92,6 +97,11 @@ app.put("/admin/notifications/preferences", verifyToken, requireAdmin, updateNot
 app.post("/admin/integrations/request", verifyToken, requireAdmin, requestIntegrationChange);
 app.post("/admin/integrations/verify", verifyToken, requireAdmin, verifyIntegrationCode);
 app.post("/admin/integrations/update", verifyToken, requireAdmin, updateIntegrationKey);
+
+// ============ ROTAS DE VOICE CACHE (Base de Dados de Áudios) ============
+app.get("/admin/voice-cache/stats", verifyToken, requireAdmin, getVoiceCacheStatistics);
+app.get("/admin/voice-cache/list", verifyToken, requireAdmin, listarVoiceCache);
+app.post("/admin/voice-cache/limpar", verifyToken, requireAdmin, limparVoiceCacheAntigo);
 
 app.post("/auth/logout", verifyToken, logout);
 

@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { trackAICall } from "../services/costTracker";
-import { redis } from "../cache/redis";
+import { client } from "../cache/redis";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -26,9 +26,9 @@ async function getNextOpenAIClient(): Promise<OpenAI | null> {
   }
 
   if (activeApiKeyIndex === 1) {
-    let primaryKey = await redis.get("secret:key:openai_primary");
+    let primaryKey = await client.get("secret:key:openai_primary");
     if (!primaryKey) {
-      primaryKey = await redis.get("secret:key:openai");
+      primaryKey = await client.get("secret:key:openai");
     }
     if (primaryKey) {
       console.log('[OPENAI] Usando chave principal do admin (secret:key:openai_primary ou secret:key:openai)');
@@ -39,7 +39,7 @@ async function getNextOpenAIClient(): Promise<OpenAI | null> {
   }
 
   if (activeApiKeyIndex === 2) {
-    const b1 = await redis.get("secret:key:openai_backup_1");
+    const b1 = await client.get("secret:key:openai_backup_1");
     if (b1) {
       console.log('[OPENAI] Usando backup 1 (secret:key:openai_backup_1)');
       currentClient = new OpenAI({ apiKey: b1 as string });
@@ -49,7 +49,7 @@ async function getNextOpenAIClient(): Promise<OpenAI | null> {
   }
 
   if (activeApiKeyIndex === 3) {
-    const b2 = await redis.get("secret:key:openai_backup_2");
+    const b2 = await client.get("secret:key:openai_backup_2");
     if (b2) {
       console.log('[OPENAI] Usando backup 2 (secret:key:openai_backup_2)');
       currentClient = new OpenAI({ apiKey: b2 as string });

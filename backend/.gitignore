@@ -3,3 +3,16 @@ node_modules
 .env
 
 /src/generated/prisma
+check-progress.js
+monitor-training.ts
+debug-env.ts
+# Ignore all test files
+test-*.ts
+*test*.ts
+test/
+**/test/
+test-cloudinary.ts
+test-db-connection.js
+test-faq-match.ts
+test-models.ts
+test-neural-validation.ts

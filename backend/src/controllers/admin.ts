@@ -1,12 +1,16 @@
 import { Request, Response } from 'express';
 import { saveConfig, getConfig, invalidateConfigCache, SystemConfig } from '../config/settings';
-import { redis, getCacheStats, MAX_CACHE_SIZE, ENABLE_CACHE_LIMIT } from '../cache/redis';
+import { client, getCacheStats, MAX_CACHE_SIZE, ENABLE_CACHE_LIMIT } from '../cache/redis';
 import { getCostSummary } from '../services/costTracker';
 import { sendIntegrationVerificationEmail } from '../services/email';
 import { resetGeminiState } from '../ai/gemini';
 import { resetOpenAIState } from '../ai/openai';
 import { resetOpenRouterState } from '../ai/openrouter';
 import { prisma } from '../lib/prisma';
+import { 
+  obterEstatisticasVoiceCache, 
+  limparVoiceCacheAntigos 
+} from '../services/voiceCacheService';
 
 const ENABLE_EMAIL_VERIFICATION = false;
 
@@ -31,7 +35,7 @@ export async function getUserProfile(req: Request, res: Response) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
 
-    const configCountStr = await redis.get(`admin:${userId}:config-count`);
+    const configCountStr = await client.get(`admin:${userId}:config-count`);
     const configCount = configCountStr ? parseInt(String(configCountStr)) : 0;
 
     res.json({
@@ -150,17 +154,13 @@ export async function requestIntegrationChange(req: Request, res: Response) {
     }
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    await redis.set(`integration:verify:${user.id}:${service}`, code, {
-      ex: 900
-    });
+    await client.setex(`integration:verify:${user.id}:${service}`, 900, code);
 
     console.log(`[INTEGRATION] Requisição de mudança - Usuário: ${user.id}, Serviço: ${service}`);
 
     if (SKIP_VERIFICATION) {
       const authToken = Math.random().toString(36).substring(7);
-      await redis.set(`integration:authorized:${user.id}:${service}`, authToken, {
-        ex: 300
-      });
+      await client.setex(`integration:authorized:${user.id}:${service}`, 300, authToken);
       console.log(`[INTEGRATION] MODO DEV: Verificação saltada. Token: ${authToken.substring(0, 5)}... salvo no Redis (TTL: 300s)`);
       return res.json({ status: 'ok', authToken, message: 'Autorizado para configurar (modo dev)' });
     }
@@ -194,16 +194,14 @@ export async function verifyIntegrationCode(req: Request, res: Response) {
     const user = (req as any).user;
     const { service, code } = req.body;
 
-    const savedCode = await redis.get(`integration:verify:${user.id}:${service}`);
+    const savedCode = await client.get(`integration:verify:${user.id}:${service}`);
 
     if (!savedCode || String(savedCode) !== code) {
       return res.status(400).json({ error: 'Código inválido ou expirado' });
     }
 
     const authToken = Math.random().toString(36).substring(7);
-    await redis.set(`integration:authorized:${user.id}:${service}`, authToken, {
-      ex: 300
-    });
+    await client.setex(`integration:authorized:${user.id}:${service}`, 300, authToken);
 
     res.json({ status: 'ok', authToken });
   } catch (error) {
@@ -218,7 +216,7 @@ export async function updateIntegrationKey(req: Request, res: Response) {
 
     console.log(`[INTEGRATION] Atualizando chave - Usuário: ${user?.id}, Serviço: ${service}, Token recebido: ${authToken ? 'Sim' : 'Não'}`);
 
-    const savedAuth = await redis.get(`integration:authorized:${user.id}:${service}`);
+    const savedAuth = await client.get(`integration:authorized:${user.id}:${service}`);
     
     console.log(`[INTEGRATION] Token salvo no Redis: ${savedAuth ? 'Encontrado' : 'NÃO ENCONTRADO'}`);
     console.log(`[INTEGRATION] Comparação: '${savedAuth}' === '${authToken}' = ${String(savedAuth) === authToken}`);
@@ -229,7 +227,7 @@ export async function updateIntegrationKey(req: Request, res: Response) {
     }
 
     const keyName = service.includes('backup') ? `secret:key:${service}` : `secret:key:${service}_primary`;
-    await redis.set(keyName, key);
+    await client.set(keyName, key);
     console.log(`[INTEGRATION] Chave salva em Redis: ${keyName}`);
 
     if (service.startsWith('gemini')) {
@@ -279,7 +277,7 @@ export async function getMetricsDetailed(req: Request, res: Response) {
       take: 20
     });
 
-    const cacheStats = await redis.hgetall('metrics:cache:global');
+    const cacheStats = await client.hgetall('metrics:cache:global');
     const hitsStr = typeof cacheStats?.hits === 'string' ? cacheStats.hits : '0';
     const missesStr = typeof cacheStats?.misses === 'string' ? cacheStats.misses : '1';
     const hits = parseInt(hitsStr);
@@ -404,7 +402,7 @@ export async function getAdminDashboard(req: Request, res: Response) {
     const config = await getConfig();
     const costSummary = await getCostSummary();
 
-    const redisHistory = await redis.lrange('config:history', 0, 5);
+    const redisHistory = await client.lrange('config:history', 0, 5);
     const configHistory = redisHistory.map(h => {
       try { return JSON.parse(h as string); } catch (e) { return h; }
     });
@@ -465,7 +463,7 @@ export async function updateSystemConfig(req: Request, res: Response) {
     invalidateConfigCache();
 
     if (userId) {
-      await redis.incr(`admin:${userId}:config-count`);
+      await client.incr(`admin:${userId}:config-count`);
     }
 
     res.json({
@@ -499,5 +497,168 @@ export async function getCacheStatistics(req: Request, res: Response) {
   } catch (error) {
     console.error('[ADMIN] Erro obter cache stats:', error);
     res.status(500).json({ error: 'Erro ao obter estatísticas de cache' });
+  }
+}
+
+/**
+ * Retorna estatísticas de VoiceCache (base de dados de áudios)
+ * Mostra quanto de economia já foi alcançada
+ */
+export async function getVoiceCacheStatistics(req: Request, res: Response) {
+  try {
+    console.log('[ADMIN] Obtendo estatísticas de VoiceCache...');
+    
+    const stats = await obterEstatisticasVoiceCache();
+
+    if (!stats) {
+      return res.status(500).json({ error: 'Erro ao obter estatísticas de VoiceCache' });
+    }
+
+    // Calcular economia estimada em custos
+    const costoPorCaracter = 0.000015; // ElevenLabs cobra por caractere
+    const audioGeradoSemCache = stats.totalPerguntas;
+    const audioReutilizado = stats.totalUsos - stats.totalPerguntas;
+    const custoEvitado = audioReutilizado * costoPorCaracter;
+    const custoTotal = stats.totalUsos * costoPorCaracter;
+
+    res.json({
+      status: 'ok',
+      voiceCacheStats: {
+        totalPerguntas: stats.totalPerguntas,
+        totalUsos: stats.totalUsos,
+        taxaDeReutilizacao: stats.totalPerguntas > 0 
+          ? `${((audioReutilizado / stats.totalUsos) * 100).toFixed(1)}%`
+          : '0%',
+        usosMediana: stats.usosMediana,
+        audioMaisUsados: stats.top5MaisUsados,
+        economia: {
+          chamadaElevenlabsEvitadas: audioReutilizado,
+          custoEvitado: `$${custoEvitado.toFixed(4)}`,
+          custoTotalSemReutilizacao: `$${custoTotal.toFixed(4)}`
+        },
+        recomendacoes: stats.totalPerguntas < 50 
+          ? 'Base pequena - continue usando o sistema para acumular mais áudios'
+          : `Ótimo! Base com ${stats.totalPerguntas} áudios indexados. Continue acumulando!`
+      }
+    });
+  } catch (error) {
+    console.error('[ADMIN] Erro ao obter VoiceCache stats:', error);
+    res.status(500).json({ error: 'Erro ao obter estatísticas de VoiceCache' });
+  }
+}
+
+/**
+ * Limpa áudios antigos de VoiceCache (não usados há X dias)
+ */
+export async function limparVoiceCacheAntigo(req: Request, res: Response) {
+  try {
+    const diasSemUso = req.body.diasSemUso || 90;
+
+    if (diasSemUso < 7) {
+      return res.status(400).json({ 
+        error: 'Número de dias deve ser no mínimo 7 para segurança' 
+      });
+    }
+
+    console.log(`[ADMIN] Limpando VoiceCache com mais de ${diasSemUso} dias sem uso...`);
+    
+    const registrosRemovidos = await limparVoiceCacheAntigos(diasSemUso);
+
+    res.json({
+      status: 'ok',
+      message: `Limpeza concluída`,
+      detalhes: {
+        registrosRemovidos,
+        diasSemUso,
+        audiosSalvosApenasHoje: false
+      }
+    });
+  } catch (error) {
+    console.error('[ADMIN] Erro ao limpar VoiceCache:', error);
+    res.status(500).json({ error: 'Erro ao limpar VoiceCache' });
+  }
+}
+
+/**
+ * Retorna lista de todos os áudios em VoiceCache
+ */
+export async function listarVoiceCache(req: Request, res: Response) {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    const [audios, total] = await Promise.all([
+      prisma.voiceCache.findMany({
+        orderBy: { usageCount: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.voiceCache.count()
+    ]);
+
+    res.json({
+      status: 'ok',
+      audios,
+      paginacao: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('[ADMIN] Erro ao listar VoiceCache:', error);
+    res.status(500).json({ error: 'Erro ao listar VoiceCache' });
+  }
+}
+
+/**
+ * Reseta a configuração para os defaults
+ * Limpa o Redis e força o sistema usar DEFAULT_CONFIG
+ */
+export async function resetConfigToDefault(req: Request, res: Response) {
+  try {
+    const adminEmail = (req as any).user?.email || 'admin@acessoia.com';
+
+    console.log(`[ADMIN] ⚠️  RESETANDO CONFIG PARA DEFAULTS - Admin: ${adminEmail}`);
+
+    // Deletar todas as chaves de config do Redis
+    const configKeys = [
+      'config:embedding:strategy',
+      'config:embedding:tfidf_threshold',
+      'config:embedding:gemini_threshold',
+      'config:chat:primary',
+      'config:chat:fallback',
+      'config:chat:tertiary',
+      'config:chat:useFallback',
+      'config:audio:storage',
+      'config:audio:ttl_seconds',
+      'config:tts:model',
+      'config:cache:max_per_session',
+      'config:admin:last_modified',
+      'config:admin:modified_by',
+      'config:admin:version'
+    ];
+
+    for (const key of configKeys) {
+      await client.del(key);
+    }
+
+    console.log(`[ADMIN] ✅ Cache limpo. Sistema agora usa DEFAULT_CONFIG`);
+    invalidateConfigCache();
+
+    // Recarregar config (vai usar defaults)
+    const newConfig = await getConfig();
+
+    res.json({
+      status: 'ok',
+      message: 'Configuração resetada para defaults',
+      estrategia: newConfig.embedding.strategy,
+      config: newConfig
+    });
+  } catch (error) {
+    console.error('[ADMIN] Erro ao resetar config:', error);
+    res.status(500).json({ error: 'Erro ao resetar configuração' });
   }
 }

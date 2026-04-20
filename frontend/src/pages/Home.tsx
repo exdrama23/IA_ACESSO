@@ -4,6 +4,7 @@ import { AudioButton } from "../components/AudioButton";
 import { StatusIndicator } from "../components/StatusIndicator";
 import { useChat } from "../hooks/useChat";
 import { useRobustHandTracking } from "../hooks/useRobustHandTracking";
+import { useSpeechInterruption } from "../hooks/useSpeechInterruption";
 import { useAppStore } from "../store/useAppStore";
 import { API_URL } from '../services/api';
 
@@ -73,6 +74,7 @@ export default function Home() {
   }, [setActiveVoiceId]);
 
   useRobustHandTracking(videoElement);
+  useSpeechInterruption();
 
   useEffect(() => {
     if (!videoElement) return;

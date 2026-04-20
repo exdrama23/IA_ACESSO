@@ -1,7 +1,7 @@
-import { redis } from '../cache/redis';
+import { client } from '../cache/redis';
 import { prisma } from '../lib/prisma';
 
-export type AIService = 'gemini' | 'openai' | 'openrouter' | 'elevenlabs' | 'google-tts' | 'cloudinary';
+export type AIService = 'gemini' | 'openai' | 'openrouter' | 'elevenlabs' | 'google-tts' | 'cloudinary' | 'voice-cache';
 
 export interface CostEntry {
   service: AIService;
@@ -28,6 +28,7 @@ export async function trackAICall(service: AIService, data: { tokens?: number, c
     if (service === 'elevenlabs' && data.characters) cost = data.characters * COSTS.ELEVENLABS_CHAR;
     if (service === 'google-tts' && data.characters) cost = data.characters * COSTS.GOOGLE_TTS_CHAR;
     if (service === 'cloudinary') cost = COSTS.CLOUDINARY_REQ;
+    if (service === 'voice-cache') cost = 0; // Cache hits não geram custo
 
     const now = new Date();
     const hourStart = new Date(now);
@@ -81,12 +82,12 @@ export async function trackAICall(service: AIService, data: { tokens?: number, c
       timestamp: Date.now()
     };
 
-    await redis.lpush('metrics:costs', JSON.stringify(entry));
-    await redis.ltrim('metrics:costs', 0, 999);
+    await client.lpush('metrics:costs', JSON.stringify(entry));
+    await client.ltrim('metrics:costs', 0, 999);
     
     const todayStr = new Date().toISOString().split('T')[0];
-    await redis.hincrbyfloat(`metrics:daily:${todayStr}`, 'total_cost', cost);
-    await redis.hincrbyfloat(`metrics:daily:${todayStr}`, `cost:${service}`, cost);
+    await client.hincrbyfloat(`metrics:daily:${todayStr}`, 'total_cost', cost);
+    await client.hincrbyfloat(`metrics:daily:${todayStr}`, `cost:${service}`, cost);
     
     console.log(`[COST] ${service.toUpperCase()} call tracked: $${cost.toFixed(6)}`);
   } catch (error) {
@@ -96,9 +97,9 @@ export async function trackAICall(service: AIService, data: { tokens?: number, c
 
 export async function getCostSummary() {
   const todayStr = new Date().toISOString().split('T')[0];
-  const stats = await redis.hgetall(`metrics:daily:${todayStr}`) as Record<string, string>;
+  const stats = await client.hgetall(`metrics:daily:${todayStr}`) as Record<string, string>;
   
-  const history = await redis.lrange('metrics:costs', 0, 10);
+  const history = await client.lrange('metrics:costs', 0, 10);
   const parsedHistory = history.map(h => {
     if (typeof h === 'string') {
       try {

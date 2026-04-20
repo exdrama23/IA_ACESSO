@@ -1,4 +1,4 @@
-import { redis } from "../cache/redis";
+import { client } from "../cache/redis";
 import { compareTwoStrings } from "string-similarity";
 import { faq } from "../data/faq";
 import { prisma } from "../lib/prisma";
@@ -86,7 +86,7 @@ export async function findSimilarCachedQuestion(
     const categoryFromFAQ = findCategoryInFAQ(perguntaNova);
     console.log(`[MATCHER] Categoria do FAQ: ${categoryFromFAQ || "Nenhuma"}`);
 
-    const allKeys = await redis.keys("cache:audio:*");
+    const allKeys = await client.keys("cache:audio:*");
     
     if (!allKeys || allKeys.length === 0) {
       console.log("[MATCHER] ✗ Nenhuma pergunta cacheada encontrada no Redis");
@@ -103,7 +103,7 @@ export async function findSimilarCachedQuestion(
 
       for (const key of allKeys) {
         try {
-          const cached = await redis.get(key) as CachedQuestion | null;
+          const cached = await client.get(key) as CachedQuestion | null;
           
           if (!cached) continue;
           
@@ -145,7 +145,7 @@ export async function findSimilarCachedQuestion(
 
     for (const key of allKeys) {
       try {
-        const cached = await redis.get(key) as CachedQuestion | null;
+        const cached = await client.get(key) as CachedQuestion | null;
         
         if (!cached) continue;
 
@@ -328,7 +328,7 @@ export async function cacheQuestionWithAudio(
     };
 
     const key = `cache:audio:${voiceId}:${Date.now()}`; 
-    await redis.set(key, cachedQuestion, { ex: ttlSeconds });
+    await client.setex(key, ttlSeconds, JSON.stringify(cachedQuestion));
 
     console.log(`[MATCHER] Pergunta cacheada: "${pergunta}"`);
     if (category) {

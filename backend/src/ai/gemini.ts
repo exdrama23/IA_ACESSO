@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { trackAICall } from "../services/costTracker";
-import { redis } from "../cache/redis";
+import { client } from "../cache/redis";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -33,9 +33,9 @@ async function getNextApiKey(): Promise<string | null> {
   }
 
   if (activeApiKeyIndex === 1) {
-    let primaryKey = await redis.get("secret:key:gemini_primary");
+    let primaryKey = await client.get("secret:key:gemini_primary");
     if (!primaryKey) {
-      primaryKey = await redis.get("secret:key:gemini");
+      primaryKey = await client.get("secret:key:gemini");
     }
     if (primaryKey) {
       console.log('[GEMINI] Usando chave principal do admin (secret:key:gemini_primary ou secret:key:gemini)');
@@ -45,7 +45,7 @@ async function getNextApiKey(): Promise<string | null> {
   }
 
   if (activeApiKeyIndex === 2) {
-    const b1 = await redis.get("secret:key:gemini_backup_1");
+    const b1 = await client.get("secret:key:gemini_backup_1");
     if (b1) {
       console.log('[GEMINI] Usando backup 1 (secret:key:gemini_backup_1)');
       return b1 as string;
@@ -54,7 +54,7 @@ async function getNextApiKey(): Promise<string | null> {
   }
 
   if (activeApiKeyIndex === 3) {
-    const b2 = await redis.get("secret:key:gemini_backup_2");
+    const b2 = await client.get("secret:key:gemini_backup_2");
     if (b2) {
       console.log('[GEMINI] Usando backup 2 (secret:key:gemini_backup_2)');
       return b2 as string;
@@ -120,17 +120,27 @@ export async function askGemini(question: string, context: string = "", history:
   const model = genAI.getGenerativeModel({ model: modelName });
   const historyText = history.map(msg => `${msg.role === "user" ? "Cliente" : "Assistente"}: ${msg.content}`).join("\n");
   
-  const prompt = `Você é a voz oficial da ACESSO.NET. Responda de forma rápida e amigável.
+  const prompt = `Você é o Assistente Virtual oficial da ACESSO.NET. Sua missão é fornecer informações EXATAS baseadas na nossa base de conhecimento.
+
+DIRETRIZES DE PENSAMENTO:
+1. Analise a pergunta do cliente.
+2. Verifique se a resposta exata está na "Base de Conhecimento" abaixo.
+3. Se a informação (preços, megas, endereços) não estiver no FAQ, diga que não tem essa informação específica e peça para ele falar com um atendente no 0800 731 1030.
+4. Priorize sempre os dados da ACESSO.NET sobre qualquer conhecimento geral.
+
 Base de Conhecimento (FAQ):
-${context ? context : "Nenhuma informação específica encontrada."}
-Histórico:
+${context ? context : "Nenhuma informação específica encontrada no FAQ."}
+
+Histórico da Conversa:
 ${historyText}
-Pergunta: ${question}
-REGRAS:
-1. Máximo 2 frases.
-2. Linguagem natural e direta.
-3. Se a informação estiver no FAQ, use-a.
-4. NUNCA use Markdown (como * ou **), pois o texto será lido por voz.`;
+
+Pergunta do Cliente: ${question}
+
+REGRAS DE RESPOSTA:
+- Responda em no máximo 2 frases curtas e diretas.
+- Use tom amigável, mas profissional.
+- PROIBIDO usar Markdown (negrito, itálico, listas, asteriscos), pois sua resposta será convertida em áudio.
+- NUNCA invente preços ou planos que não estejam no FAQ.`;
 
   try {
     const result = await model.generateContent(prompt);

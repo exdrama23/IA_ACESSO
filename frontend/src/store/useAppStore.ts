@@ -7,6 +7,12 @@ export interface HandLandmark {
   z: number;
 }
 
+export interface LastResponse {
+  text: string;
+  audioUrl: string;
+  timestamp: number;
+}
+
 export type AppStatus = "idle" | "listening" | "thinking" | "speaking" | "error";
 
 interface AppState {
@@ -18,13 +24,20 @@ interface AppState {
   
   isUserPresent: boolean;
   isPinching: boolean;
+  isStoppingGesture: boolean;
   handLandmarks: HandLandmark[];
   cursorPosition: THREE.Vector3;
   
   activeVoiceId: string;
   setActiveVoiceId: (voiceId: string) => void;
+
+  lastResponse: LastResponse | null;
+  setLastResponse: (response: LastResponse | null) => void;
   
-  setHandData: (landmarks: HandLandmark[], isPinching: boolean, isPresent: boolean) => void;
+  currentAudio: HTMLAudioElement | null;
+  setCurrentAudio: (audio: HTMLAudioElement | null) => void;
+  
+  setHandData: (landmarks: HandLandmark[], isPinching: boolean, isPresent: boolean, isStopping?: boolean) => void;
   setCursorPosition: (pos: THREE.Vector3) => void;
 }
 
@@ -37,16 +50,24 @@ export const useAppStore = create<AppState>((set) => ({
 
   isUserPresent: false,
   isPinching: false,
+  isStoppingGesture: false,
   handLandmarks: [],
   cursorPosition: new THREE.Vector3(0, 0, 0),
   
   activeVoiceId: "hpp4J3VqNfWAUOO0d1Us",
   setActiveVoiceId: (voiceId) => set({ activeVoiceId: voiceId }),
 
-  setHandData: (landmarks, isPinching, isPresent) => set({ 
+  lastResponse: null,
+  setLastResponse: (response) => set({ lastResponse: response }),
+
+  currentAudio: null,
+  setCurrentAudio: (audio) => set({ currentAudio: audio }),
+
+  setHandData: (landmarks, isPinching, isPresent, isStopping = false) => set({ 
     handLandmarks: landmarks, 
     isPinching, 
-    isUserPresent: isPresent 
+    isUserPresent: isPresent,
+    isStoppingGesture: isStopping
   }),
   
   setCursorPosition: (cursorPosition) => set({ cursorPosition }),

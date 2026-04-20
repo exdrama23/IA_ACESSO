@@ -17,7 +17,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { generateTFIDFVector } from "../ai/semantic";
 import { getConfig, AIProvider, saveConfig } from "../config/settings";
 import { createSystemNotification } from "../utils/notifications";
-import { findSimilarQuestionFromDatabase } from "../utils/questionMatcher";
+import { findSimilarQuestionFromDatabase, extractKeywords } from "../utils/questionMatcher";
 
 async function askAI(provider: AIProvider, question: string, context: string, history: any[]): Promise<string> {
   if (provider === 'gemini') {
@@ -101,6 +101,42 @@ export async function chat(req: Request, res: Response, next: any) {
 
     console.log(`[SESSÃO: ${sessionId}] Pergunta a processar:`, question);
 
+    // ✅ NOVO: Detectar comando de repetição ANTES de processar
+    const isRepeatCommand = (q: string): boolean => {
+      const patterns = ["pode repetir", "repete", "repita", "repete aí", "de novo", "fala de novo", "outra vez", "novamente"];
+      const lowerQ = q.toLowerCase().trim();
+      return patterns.some(p => lowerQ.includes(p));
+    };
+
+    if (isRepeatCommand(question)) {
+      console.log(`[REPETIR] Comando de repeticao detectado`);
+      
+      const lastResponseKey = `session:${sessionId}:last_response`;
+      const cachedLastResponse = await getCache(lastResponseKey) as any;
+
+      if (cachedLastResponse) {
+        try {
+          const lastResponse = typeof cachedLastResponse === 'string' ? JSON.parse(cachedLastResponse) : cachedLastResponse;
+          console.log(`[REPETIR] Ultima resposta encontrada: "${lastResponse.text.substring(0, 50)}..."`);
+          
+          return res.json({
+            text: lastResponse.text,
+            audioUrl: lastResponse.audioUrl || "",
+            source: lastResponse.source,
+            confidence: 100
+          });
+        } catch (e) {
+          console.error("[REPETIR] Erro ao parsejar ultima resposta:", e);
+        }
+      } else {
+        console.log(`[REPETIR] Nenhuma resposta anterior encontrada para repetir`);
+        return res.json({
+          text: "Não há resposta anterior para repetir. Faça uma pergunta primeiro.",
+          audioUrl: ""
+        });
+      }
+    }
+
     if (isMalicious(question)) {
       console.log('[CHAT] Pergunta bloqueada por filtro de segurança');
       return res.json({ text: "Comando bloqueado por segurança.", audioUrl: "" });
@@ -111,25 +147,19 @@ export async function chat(req: Request, res: Response, next: any) {
     let source = "IA_SEMANTICA";
     let matchScore = 0;
 
-    const neuralMatch = await neuralDetector.findCategoryBySimilarity(question, 0.85);
+    // BUSCA NEURAL UNIFICADA (threshold 0.85)
+    // O motor agora retorna a resposta direta do item mais similar ou match literal
+    const neuralMatch = await neuralDetector.searchInFAQ(question, 0.85);
 
     if (neuralMatch) {
       const latency = performance.now() - startTime;
       neuralMetrics.recordNeuralMatch(neuralMatch.score, latency);
       
-      console.log(`[CHAT] ✓ Categoria detectada por rede neural: ${neuralMatch.categoria} (Score: ${neuralMatch.score.toFixed(3)})`);
+      console.log(`[CHAT] Match de alta precisao via Rede Neural: "${neuralMatch.perguntaSimilar}" (Score: ${neuralMatch.score.toFixed(3)})`);
       
-      let faqItem: any = undefined;
-      for (const cat in faq) {
-        faqItem = faq[cat].find((item: any) => item.category === neuralMatch.categoria);
-        if (faqItem) break;
-      }
-
-      if (faqItem) {
-        respostaText = faqItem.answer;
-        source = "FAQ_NEURAL";
-        matchScore = neuralMatch.score;
-      }
+      respostaText = neuralMatch.resposta;
+      source = "FAQ_NEURAL_UNIFICADO";
+      matchScore = neuralMatch.score;
     }
 
     if (!respostaText) {
@@ -148,8 +178,9 @@ export async function chat(req: Request, res: Response, next: any) {
       const config = await getConfig();
       const history = await getConversationHistory(sessionId);
 
-      const topMatches = await searchFAQ(question, 2);
-      contextText = topMatches.map(m => m.item.answer).join("\n");
+      // Busca contexto para a IA usando o motor neural (Top 2 resultados)
+      const topMatches = await neuralDetector.getTopMatches(question, 2);
+      contextText = topMatches.map(m => m.resposta).join("\n");
 
       const primary = config.chat.primary;
       const fallback = config.chat.fallback;
@@ -242,108 +273,57 @@ export async function chat(req: Request, res: Response, next: any) {
     let confidence = "100%";
     let audioSource = "NOVO";
 
+    // ⚠️ REGRA DE OURO GSD: Reaproveitamento de áudio
+    // 1. Se for FAQ (Neural 0.85+), busca áudio exato para aquela resposta no DB
+    // 2. Se for IA Generativa, SEMPRE gera áudio novo para evitar alucinações
+    const isFAQMatch = source === "FAQ_NEURAL_UNIFICADO";
+
     console.log(`\n═══════════════════════════════════════════════`);
-    console.log(`[FLUXO] INICIANDO BUSCA DE ÁUDIO EM CACHE`);
+    console.log(`[ÁUDIO] INICIANDO ESTRATÉGIA DE ÁUDIO`);
     console.log(`═══════════════════════════════════════════════`);
 
-    console.log(`\n[PASSO 1] Buscando perguntas similares no Redis...`);
-    const similarQuestion = await findSimilarCachedQuestion(question, activeVoiceId, 0.5);
+    if (!isFAQMatch) {
+      console.log(`\n[ÁUDIO] 🤖 RESPOSTA DE IA DETECTADA - Gerando áudio único...`);
+      const audioUrl_generated = await gerarAudio(respostaText, true);
 
-    if (similarQuestion && similarQuestion.audioUrl) {
-      console.log(`\n✓ [SUCESSO] Pergunta similar encontrada!`);
-      console.log(`  Pergunta similar: "${similarQuestion.pergunta}"`);
-      console.log(`  Categoria: ${similarQuestion.category || "Sem categoria"}`);
-      console.log(`  URL do áudio (Redis): ${similarQuestion.audioUrl}`);
-      console.log(`\n  → REUTILIZANDO áudio existente (SEM gerar novo)`);
-      
-      audioUrl = similarQuestion.audioUrl;
-      audioSource = "REDIS_SIMILAR";
-      source = `${source}_AUDIO_REDIS_SIMILAR`;
-      
-      console.log(`\n[PASSO 2] Salvando nova pergunta vinculada ao áudio existente...`);
-      await cacheQuestionWithAudio(question, audioUrl, activeVoiceId, config.audio.ttl_seconds);
-      await prisma.voiceCache.upsert({
-        where: { question },
-        update: { usageCount: { increment: 1 }, lastUsed: new Date() },
-        create: { question, audioUrl, voiceId: activeVoiceId }
-      });
-      console.log(`  ✓ Nova pergunta cacheada com URL do Redis`);
-      
-    } else {
-      console.log(`\n[PASSO 2] Nenhuma similar no Redis. Buscando similar no Banco de Dados...`);
-      const similarQuestionDB = await findSimilarQuestionFromDatabase(question, activeVoiceId, 0.5);
-
-      if (similarQuestionDB && similarQuestionDB.audioUrl) {
-        console.log(`\n✓ [SUCESSO] Pergunta similar no BD!`);
-        console.log(`  Pergunta similar: "${similarQuestionDB.pergunta}"`);
-        console.log(`  URL do áudio (BD): ${similarQuestionDB.audioUrl}`);
+      if (audioUrl_generated) {
+        audioUrl = audioUrl_generated;
+        audioSource = "CLOUDINARY_NOVO_IA";
         
-        audioUrl = similarQuestionDB.audioUrl;
-        audioSource = "DATABASE_SIMILAR";
-        source = `${source}_AUDIO_DB_SIMILAR`;
-        
+        // Cacheia para repetições imediatas na mesma sessão
         await cacheQuestionWithAudio(question, audioUrl, activeVoiceId, config.audio.ttl_seconds);
-        await prisma.voiceCache.upsert({
-          where: { question },
-          update: { usageCount: { increment: 1 }, lastUsed: new Date() },
-          create: { question, audioUrl, voiceId: activeVoiceId }
-        });
+      }
+    } else {
+      console.log(`[ÁUDIO] RESPOSTA DE FAQ DETECTADA - Buscando cache de áudio...`);
+      
+      const targetQuestion = neuralMatch?.perguntaSimilar || question;
+      
+      const dbCachedVoice = await prisma.voiceCache.findUnique({
+        where: { question: targetQuestion }
+      });
+
+      if (dbCachedVoice && dbCachedVoice.audioUrl) {
+        console.log(`[ÁUDIO] Audio reaproveitado do FAQ: "${targetQuestion}"`);
+        audioUrl = dbCachedVoice.audioUrl;
+        audioSource = "DATABASE_FAQ_REUSE";
         
-      } else {
-        console.log(`\n[PASSO 3] Nenhuma similar no BD. Buscando por exatidão...`);
-        const dbCachedVoice = await prisma.voiceCache.findUnique({
-          where: { question: question }
+        await prisma.voiceCache.update({
+          where: { id: dbCachedVoice.id },
+          data: { usageCount: { increment: 1 }, lastUsed: new Date() }
         });
+      } else {
+        console.log(`[ÁUDIO] Novo áudio necessário para: "${targetQuestion}"`);
+        const audioUrl_generated = await gerarAudio(respostaText);
 
-        if (dbCachedVoice && dbCachedVoice.audioUrl) {
-          console.log(`\n✓ [SUCESSO] Áudio recuperado do Banco de Dados!`);
-          audioUrl = dbCachedVoice.audioUrl;
-          audioSource = "DATABASE_PERMANENTE";
-          source = `${source}_AUDIO_DB`;
-
-          await prisma.voiceCache.update({
-            where: { id: dbCachedVoice.id },
-            data: { usageCount: { increment: 1 }, lastUsed: new Date() }
-          });
-          await cacheQuestionWithAudio(question, audioUrl, activeVoiceId, config.audio.ttl_seconds);
-        } else {
-          console.log(`\n[PASSO 4] Nenhuma no DB. Buscando por exatidão no Redis...`);
-          const cachedAudio = await getCachedAudioByQuestion(question, activeVoiceId);
+        if (audioUrl_generated) {
+          audioUrl = audioUrl_generated;
+          audioSource = "CLOUDINARY_FAQ_NOVO";
           
-          if (cachedAudio && cachedAudio.audioUrl) {
-            console.log(`\n✓ [SUCESSO] Pergunta exata encontrada no Redis!`);
-            audioUrl = cachedAudio.audioUrl;
-            audioSource = "REDIS_EXATO";
-            source = source === "CACHE_REDIS" ? "CACHE_AUDIO_REDIS" : `${source}_AUDIO_REDIS_EXATO`;
-            
-            await prisma.voiceCache.upsert({
-              where: { question },
-              update: { usageCount: { increment: 1 }, lastUsed: new Date() },
-              create: { question, audioUrl, voiceId: activeVoiceId }
-            });
-            
-          } else {
-            console.log(`\n[PASSO 5] Nenhum áudio em lugar nenhum. Gerando novo áudio com TTS...`);
-            const audioUrl_generated = await gerarAudio(respostaText);
-
-            if (audioUrl_generated) {
-              console.log(`\n✓ [SUCESSO] Áudio gerado e enviado para Cloudinary`);
-              audioUrl = audioUrl_generated;
-              audioSource = "CLOUDINARY_NOVO";
-              
-
-              await cacheQuestionWithAudio(question, audioUrl, activeVoiceId, config.audio.ttl_seconds);
-              await prisma.voiceCache.upsert({
-                where: { question },
-                update: { audioUrl, voiceId: activeVoiceId, usageCount: { increment: 1 }, lastUsed: new Date() },
-                create: { question, audioUrl, voiceId: activeVoiceId }
-              });
-              console.log(`  ✓ Pergunta salva no DB e no Redis.`);
-            } else {
-              console.error("\n✗ [ERRO] Falha ao gerar áudio");
-              audioUrl = "";
-            }
-          }
+          await prisma.voiceCache.upsert({
+            where: { question: targetQuestion },
+            update: { audioUrl, usageCount: { increment: 1 }, lastUsed: new Date() },
+            create: { question: targetQuestion, audioUrl, voiceId: activeVoiceId }
+          });
         }
       }
     }
@@ -388,6 +368,22 @@ export async function chat(req: Request, res: Response, next: any) {
       }
     } catch (dbErr) {
       console.error('[PRISMA] Erro ao salvar histórico:', dbErr);
+    }
+
+    // ✅ NOVO: Armazenar última resposta no Redis para repetição
+    try {
+      const lastResponseKey = `session:${sessionId}:last_response`;
+      const lastResponseData = {
+        text: respostaText,
+        audioUrl: audioUrl,
+        source,
+        confidence,
+        timestamp: Date.now()
+      };
+      await setCache(lastResponseKey, JSON.stringify(lastResponseData), 3600); // 1 hora
+      console.log(`[CACHE] Última resposta armazenada para sessão ${sessionId}`);
+    } catch (cacheErr) {
+      console.error("[CACHE] Erro ao armazenar última resposta:", cacheErr);
     }
 
     res.json({

@@ -72,14 +72,18 @@ import { AppError } from "../middleware/errorHandler";
 import { trackAICall } from "../services/costTracker";
 
 export async function chat(req: Request, res: Response, next: any) {
+  const chatStartTime = performance.now();
+  let times: any = {};
+  
   try {
-    const startTime = performance.now();
-    console.log('[CHAT] Iniciando processamento...');
     const { text, sessionId: bodySessionId } = req.body;
     const audioFile = req.file;
+    
+    // Robustez no sessionId: Header tem precedência absoluta
     const sessionId = (req.headers["x-session-id"] as string) || bodySessionId || "default_session"; 
 
-    console.log('[CHAT] Input:', { text: text?.substring(0, 50), audioFile: !!audioFile, sessionId });
+    console.log(`[CHAT][${sessionId}] 🚀 Iniciando processamento...`);
+    console.log(`[CHAT][${sessionId}] Input:`, { text: text?.substring(0, 50), audioFile: !!audioFile });
     
     const validationErrors = validateChatInput({ text, audio: audioFile, sessionId });
     if (validationErrors.length > 0) {
@@ -89,8 +93,10 @@ export async function chat(req: Request, res: Response, next: any) {
     let question = text;
 
     if (!question && audioFile) {
-      console.log("Transcrevendo áudio via Gemini (Fallback)...");
+      const sttStartTime = performance.now();
+      console.log(`[CHAT][${sessionId}] Transcrevendo áudio via Gemini...`);
       question = await transcribeAudio(audioFile.buffer, audioFile.mimetype);
+      times.stt = (performance.now() - sttStartTime).toFixed(0);
 
       await trackAICall('gemini', { tokens: 100, type: 'stt_transcription' });
     }
@@ -99,9 +105,7 @@ export async function chat(req: Request, res: Response, next: any) {
       return res.json({ text: "Não consegui entender. Pode repetir?", audioUrl: "" });
     }
 
-    console.log(`[SESSÃO: ${sessionId}] Pergunta a processar:`, question);
-
-    // ✅ NOVO: Detectar comando de repetição ANTES de processar
+    // ✅ DETECTAR COMANDO DE REPETIÇÃO
     const isRepeatCommand = (q: string): boolean => {
       const patterns = ["pode repetir", "repete", "repita", "repete aí", "de novo", "fala de novo", "outra vez", "novamente"];
       const lowerQ = q.toLowerCase().trim();
@@ -109,307 +113,171 @@ export async function chat(req: Request, res: Response, next: any) {
     };
 
     if (isRepeatCommand(question)) {
-      console.log(`[REPETIR] Comando de repeticao detectado`);
-      
+      const repeatStartTime = performance.now();
       const lastResponseKey = `session:${sessionId}:last_response`;
-      const cachedLastResponse = await getCache(lastResponseKey) as any;
+      console.log(`[REPETIR][${sessionId}] Buscando última resposta no cache...`);
+      
+      const cachedLastResponse = await getCache(lastResponseKey);
 
       if (cachedLastResponse) {
         try {
           const lastResponse = typeof cachedLastResponse === 'string' ? JSON.parse(cachedLastResponse) : cachedLastResponse;
-          console.log(`[REPETIR] Ultima resposta encontrada: "${lastResponse.text.substring(0, 50)}..."`);
+          console.log(`[REPETIR][${sessionId}] ✓ Sucesso. Latência: ${(performance.now() - repeatStartTime).toFixed(0)}ms`);
           
           return res.json({
             text: lastResponse.text,
             audioUrl: lastResponse.audioUrl || "",
             source: lastResponse.source,
-            confidence: 100
+            confidence: 100,
+            isRepeat: true
           });
         } catch (e) {
-          console.error("[REPETIR] Erro ao parsejar ultima resposta:", e);
+          console.error(`[REPETIR][${sessionId}] Erro ao processar cache:`, e);
         }
       } else {
-        console.log(`[REPETIR] Nenhuma resposta anterior encontrada para repetir`);
+        console.log(`[REPETIR][${sessionId}] ✗ Nenhuma resposta encontrada para esta sessão.`);
         return res.json({
-          text: "Não há resposta anterior para repetir. Faça uma pergunta primeiro.",
+          text: "Não há resposta anterior para repetir nesta sessão. Como posso te ajudar?",
           audioUrl: ""
         });
       }
     }
 
     if (isMalicious(question)) {
-      console.log('[CHAT] Pergunta bloqueada por filtro de segurança');
+      console.log(`[CHAT][${sessionId}] 🛡️ Comando bloqueado por segurança.`);
       return res.json({ text: "Comando bloqueado por segurança.", audioUrl: "" });
     }
 
     let respostaText = "";
-    let contextText = "";
     let source = "IA_SEMANTICA";
     let matchScore = 0;
 
-    // BUSCA NEURAL UNIFICADA (threshold 0.85)
-    // O motor agora retorna a resposta direta do item mais similar ou match literal
+    // 1. BUSCA NEURAL UNIFICADA
+    const neuralStartTime = performance.now();
     const neuralMatch = await neuralDetector.searchInFAQ(question, 0.85);
+    times.neuralSearch = (performance.now() - neuralStartTime).toFixed(0);
 
     if (neuralMatch) {
-      const latency = performance.now() - startTime;
-      neuralMetrics.recordNeuralMatch(neuralMatch.score, latency);
-      
-      console.log(`[CHAT] Match de alta precisao via Rede Neural: "${neuralMatch.perguntaSimilar}" (Score: ${neuralMatch.score.toFixed(3)})`);
-      
+      neuralMetrics.recordNeuralMatch(neuralMatch.score, parseFloat(times.neuralSearch));
+      console.log(`[CHAT][${sessionId}] ✓ Match Neural (FAQ): "${neuralMatch.perguntaSimilar}" (${neuralMatch.score.toFixed(3)})`);
       respostaText = neuralMatch.resposta;
       source = "FAQ_NEURAL_UNIFICADO";
       matchScore = neuralMatch.score;
     }
 
+    // 2. CACHE DE TEXTO (REDIS)
     if (!respostaText) {
       const textCacheKey = gerarChave(question, "text");
-      const cachedResponse = await getCache(textCacheKey) as string;
-
+      const cachedResponse = await getCache(textCacheKey);
       if (cachedResponse) {
-        neuralMetrics.recordCacheMatch();
-        console.log("[CACHE] Resposta de texto recuperada do Redis");
-        respostaText = cachedResponse;
+        console.log(`[CHAT][${sessionId}] ✓ Resposta recuperada do Redis`);
+        respostaText = typeof cachedResponse === 'string' ? cachedResponse : (cachedResponse as any).text || "";
         source = "CACHE_REDIS";
       }
     }
 
+    // 3. IA GENERATIVA (FALLBACKS)
     if (!respostaText) {
+      const aiStartTime = performance.now();
       const config = await getConfig();
       const history = await getConversationHistory(sessionId);
-
-      // Busca contexto para a IA usando o motor neural (Top 2 resultados)
       const topMatches = await neuralDetector.getTopMatches(question, 2);
-      contextText = topMatches.map(m => m.resposta).join("\n");
+      const contextText = topMatches.map(m => m.resposta).join("\n");
 
-      const primary = config.chat.primary;
-      const fallback = config.chat.fallback;
-      const tertiary = config.chat.tertiary;
-
-      console.log(`[AI] Configuração: Primary=${primary}, Fallback=${fallback}, Tertiary=${tertiary}, UseFallback=${config.chat.useFallback}`);
-
-      try {
-        console.log(`[AI] Consultando provedor primário: ${primary}...`);
-        respostaText = await askAI(primary, question, contextText, history);
-        source = `IA_${primary.toUpperCase()}`;
-      } catch (primaryError: any) {
-        console.warn(`[AI] Falha no provedor primário (${primary}):`, primaryError.message);
-        
-        if (config.chat.useFallback) {
-          try {
-            console.log(`[AI] Consultando fallback: ${fallback}...`);
-            respostaText = await askAI(fallback, question, contextText, history);
-            source = `IA_${fallback.toUpperCase()}_FALLBACK`;
-            
-            console.log(`[AI] FALLBACK FUNCIONOU! Promovendo ${fallback} a provedor principal...`);
-
-            const newConfig = { ...config };
-            newConfig.chat.primary = fallback;
-            newConfig.chat.fallback = primary;
-            newConfig.metadata.last_modified = Date.now();
-            newConfig.metadata.modified_by = 'system:auto-failover';
-            newConfig.metadata.version++;
-            
-            await saveConfig(newConfig, 'system@auto-failover');
-            await createSystemNotification({
-              type: 'warning',
-              title: `Falha em ${primary} - Fallback Ativado`,
-              message: `Houve um erro na chave API do ${primary}. ${fallback} agora é o provedor principal. A chave do ${primary} será retestada em breve.`
-            });
-            
-          } catch (fallbackError) {
-            console.warn(`[AI] Falha no fallback (${fallback}):`, (fallbackError as any).message);
-
-            try {
-              console.log(`[AI] Consultando terceiro fallback: ${tertiary}...`);
-              respostaText = await askAI(tertiary, question, contextText, history);
-              source = `IA_${tertiary.toUpperCase()}_TERTIARY_FALLBACK`;
-
-              console.log(`[AI] TERCEIRO FALLBACK FUNCIONOU! Promovendo ${tertiary} a provedor principal...`);
-              
-              const newConfig = { ...config };
-              newConfig.chat.primary = tertiary;
-              newConfig.chat.fallback = fallback;
-              newConfig.chat.tertiary = primary;
-              newConfig.metadata.last_modified = Date.now();
-              newConfig.metadata.modified_by = 'system:auto-failover-tertiary';
-              newConfig.metadata.version++;
-              
-              await saveConfig(newConfig, 'system@auto-failover-tertiary');
-              
-              await createSystemNotification({
-                type: 'error',
-                title: `Falha em ${primary} e ${fallback} - ${tertiary} Ativado`,
-                message: `Erros nos provedores ${primary} e ${fallback}. ${tertiary} agora é o provedor principal (modo emergência).`
-              });
-              
-            } catch (tertiaryError) {
-              console.error(`[AI]  FALHA TOTAL (Primário, Fallback e Tertiary).`);
-              respostaText = "Desculpe, estou com uma instabilidade técnica severa. Pode repetir a pergunta em alguns minutos?";
-              source = "ERRO_SISTEMA";
-            }
-          }
-        } else {
-          respostaText = "Desculpe, tive um problema ao processar sua resposta.";
-          source = "ERRO_SISTEMA";
+      const providers = [config.chat.primary, config.chat.fallback, config.chat.tertiary];
+      
+      for (const provider of providers) {
+        try {
+          console.log(`[AI][${sessionId}] Consultando ${provider}...`);
+          respostaText = await askAI(provider as AIProvider, question, contextText, history);
+          source = `IA_${provider.toUpperCase()}`;
+          break; // Sucesso
+        } catch (err: any) {
+          console.error(`[AI][${sessionId}] Falha em ${provider}:`, err.message);
+          continue;
         }
       }
 
-      if (respostaText && source !== "ERRO_SISTEMA") {
-        const textCacheKey = gerarChave(question, "text");
-        await setCache(textCacheKey, respostaText, THREE_DAYS_SECONDS);
+      if (!respostaText) {
+        respostaText = "Desculpe, estou com uma instabilidade técnica. Pode repetir em instantes?";
+        source = "ERRO_SISTEMA";
       }
+      times.ai = (performance.now() - aiStartTime).toFixed(0);
     }
 
-    await addConversationHistory(sessionId, question, respostaText);
-
+    // 4. ÁUDIO (VOICE CACHE / ELEVENLABS)
+    const audioStartTime = performance.now();
     const config = await getConfig();
-    console.log(`[AUDIO] Processando cache de áudio...`);
-
-    const activeVoiceId = config.tts.voiceId || "hpp4J3VqNfWAUOO0d1Us";
-    console.log(`[AUDIO] Voz ativa: ${activeVoiceId}`);
-
+    
     let audioUrl = "";
-    let confidence = "100%";
-    let audioSource = "NOVO";
-
-    // ⚠️ REGRA DE OURO GSD: Reaproveitamento de áudio
-    // 1. Se for FAQ (Neural 0.85+), busca áudio exato para aquela resposta no DB
-    // 2. Se for IA Generativa, SEMPRE gera áudio novo para evitar alucinações
     const isFAQMatch = source === "FAQ_NEURAL_UNIFICADO";
 
-    console.log(`\n═══════════════════════════════════════════════`);
-    console.log(`[ÁUDIO] INICIANDO ESTRATÉGIA DE ÁUDIO`);
-    console.log(`═══════════════════════════════════════════════`);
-
-    if (!isFAQMatch) {
-      console.log(`\n[ÁUDIO] 🤖 RESPOSTA DE IA DETECTADA - Gerando áudio único...`);
-      const audioUrl_generated = await gerarAudio(respostaText, true);
-
-      if (audioUrl_generated) {
-        audioUrl = audioUrl_generated;
-        audioSource = "CLOUDINARY_NOVO_IA";
-        
-        // Cacheia para repetições imediatas na mesma sessão
-        await cacheQuestionWithAudio(question, audioUrl, activeVoiceId, config.audio.ttl_seconds);
-      }
-    } else {
-      console.log(`[ÁUDIO] RESPOSTA DE FAQ DETECTADA - Buscando cache de áudio...`);
-      
-      const targetQuestion = neuralMatch?.perguntaSimilar || question;
-      
-      const dbCachedVoice = await prisma.voiceCache.findUnique({
-        where: { question: targetQuestion }
-      });
-
-      if (dbCachedVoice && dbCachedVoice.audioUrl) {
-        console.log(`[ÁUDIO] Audio reaproveitado do FAQ: "${targetQuestion}"`);
-        audioUrl = dbCachedVoice.audioUrl;
-        audioSource = "DATABASE_FAQ_REUSE";
-        
-        await prisma.voiceCache.update({
-          where: { id: dbCachedVoice.id },
-          data: { usageCount: { increment: 1 }, lastUsed: new Date() }
-        });
-      } else {
-        console.log(`[ÁUDIO] Novo áudio necessário para: "${targetQuestion}"`);
-        const audioUrl_generated = await gerarAudio(respostaText);
-
-        if (audioUrl_generated) {
-          audioUrl = audioUrl_generated;
-          audioSource = "CLOUDINARY_FAQ_NOVO";
-          
-          await prisma.voiceCache.upsert({
-            where: { question: targetQuestion },
-            update: { audioUrl, usageCount: { increment: 1 }, lastUsed: new Date() },
-            create: { question: targetQuestion, audioUrl, voiceId: activeVoiceId }
-          });
-        }
-      }
-    }
+    // ✅ OTIMIZAÇÃO: Reaproveitamento de áudio para IA se match exato
+    // 85% para FAQ (flexível), 98% para IA (rígido/exato)
+    const ttsThreshold = isFAQMatch ? 0.85 : 0.98;
     
-    console.log(`\n═══════════════════════════════════════════════`);
-    console.log(`[RESUMO] Fonte do áudio: ${audioSource}`);
-    console.log(`═══════════════════════════════════════════════\n`);
+    audioUrl = await gerarAudio(respostaText, false, ttsThreshold); 
+    
+    times.audio = (performance.now() - audioStartTime).toFixed(0);
 
-    try {
-      const existingErrorRecord = await prisma.chatHistory.findFirst({
-        where: {
-          question: question,
-          source: "ERRO_SISTEMA"
+    // 5. RESPOSTA AO USUÁRIO (RÁPIDA)
+    const totalLatency = (performance.now() - chatStartTime).toFixed(0);
+    console.log(`[CHAT][${sessionId}] Finalizado. Latência Total: ${totalLatency}ms. Times:`, times);
+
+    res.json({
+      text: respostaText,
+      audioUrl: audioUrl,
+      source,
+      confidence: "100%",
+      latency: `${totalLatency}ms`
+    });
+
+    // 6. TAREFAS DE BACKGROUND (NÃO BLOQUEANTES)
+    (async () => {
+      try {
+        // Histórico de Conversa (Redis)
+        addConversationHistory(sessionId, question, respostaText).catch(e => {});
+
+        // Cache de Texto se for novo
+        if (source.startsWith("IA_")) {
+          const textCacheKey = gerarChave(question, "text");
+          setCache(textCacheKey, respostaText, THREE_DAYS_SECONDS).catch(e => {});
         }
-      });
 
-      if (existingErrorRecord && source !== "ERRO_SISTEMA") {
-        await prisma.chatHistory.update({
-          where: { id: existingErrorRecord.id },
-          data: {
-            answer: respostaText,
-            source: source,
-            confidence: parseFloat(confidence),
-            audioUrl: audioUrl || null,
-            embedding: JSON.stringify(generateTFIDFVector(question).data),
-            updatedAt: new Date()
-          }
-        });
-      } else {
-        await prisma.chatHistory.create({
+        // Última resposta para o comando "repita"
+        const lastResponseKey = `session:${sessionId}:last_response`;
+        const lastResponseData = {
+          text: respostaText,
+          audioUrl: audioUrl,
+          source,
+          timestamp: Date.now()
+        };
+        setCache(lastResponseKey, lastResponseData, 3600).catch(e => {});
+
+        // Histórico no Banco de Dados (Prisma)
+        const embedding = JSON.stringify(generateTFIDFVector(question).data);
+        
+        prisma.chatHistory.create({
           data: {
             userId: (req as any).user?.id || null,
             sessionId,
             question,
             answer: respostaText,
             source,
-            confidence: parseFloat(confidence),
+            confidence: 100,
             audioUrl: audioUrl || null,
-            embedding: JSON.stringify(generateTFIDFVector(question).data)
+            embedding
           }
-        });
+        }).catch(err => console.error(`[BG][PRISMA] Erro ao salvar histórico:`, err.message));
+
+      } catch (bgErr: any) {
+        console.error(`[BG][ERROR] Erro em tarefas de background:`, bgErr.message);
       }
-    } catch (dbErr) {
-      console.error('[PRISMA] Erro ao salvar histórico:', dbErr);
-    }
-
-    // ✅ NOVO: Armazenar última resposta no Redis para repetição
-    try {
-      const lastResponseKey = `session:${sessionId}:last_response`;
-      const lastResponseData = {
-        text: respostaText,
-        audioUrl: audioUrl,
-        source,
-        confidence,
-        timestamp: Date.now()
-      };
-      await setCache(lastResponseKey, JSON.stringify(lastResponseData), 3600); // 1 hora
-      console.log(`[CACHE] Última resposta armazenada para sessão ${sessionId}`);
-    } catch (cacheErr) {
-      console.error("[CACHE] Erro ao armazenar última resposta:", cacheErr);
-    }
-
-    res.json({
-      text: respostaText,
-      audioUrl: audioUrl,
-      source,
-      confidence
-    });
+    })();
 
   } catch (error) {
-    console.error("[CHAT] ERRO COMPLETO:", {
-      type: error instanceof Error ? error.constructor.name : typeof error,
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      error: error
-    });
-    
-    const err = error as Error;
-    console.error("Stack completo:", err.stack);
-    
-    res.status(500).json({ 
-      error: "Erro interno",
-      details: process.env.NODE_ENV === 'development' ? {
-        message: err.message,
-        type: err.constructor.name
-      } : undefined
-    });
+    console.error("[CHAT] ERRO CRÍTICO:", error);
+    res.status(500).json({ error: "Erro interno no processamento." });
   }
 }
+

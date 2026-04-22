@@ -8,9 +8,10 @@ import {
   salvarAudioEmVoiceCache 
 } from "../services/voiceCacheService";
 
-export async function gerarAudio(texto: string, forcarGeracao: boolean = false): Promise<string> {
+export async function gerarAudio(texto: string, forcarGeracao: boolean = false, threshold: number = 0.85): Promise<string> {
   console.log(`\n[TTS] ════════════════════════════════════════`);
   console.log(`[TTS] Processando TTS para: "${texto.substring(0, 80)}..."`);
+  console.log(`[TTS] Limiar de Cache: ${(threshold * 100).toFixed(1)}%`);
   console.log(`[TTS] ════════════════════════════════════════`);
 
   // ============ PASSO 1: BUSCAR EM VOICECACHE ============
@@ -20,7 +21,7 @@ export async function gerarAudio(texto: string, forcarGeracao: boolean = false):
     
     console.log(`\n[TTS] PASSO 1: Buscando áudio similar em VoiceCache...`);
     
-    const audioSimilar = await buscarAudioSimilarEmVoiceCache(texto, VOICE_ID);
+    const audioSimilar = await buscarAudioSimilarEmVoiceCache(texto, VOICE_ID, threshold);
     
     if (audioSimilar) {
       console.log(`[TTS] ✓ REUTILIZANDO ÁUDIO EXISTENTE`);

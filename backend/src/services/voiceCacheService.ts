@@ -46,7 +46,31 @@ export async function buscarAudioSimilarEmVoiceCache(
     console.log(`[VOICE_CACHE] Buscando áudio similar para: "${pergunta}"`);
     console.log(`[VOICE_CACHE] Limiar de similaridade: ${(threshold * 100).toFixed(1)}%`);
 
-    // Buscar todas as perguntas cacheadas
+    // ============ ESTRATÉGIA 0: Match Exato (Ultra Rápido) ============
+    const matchExato = await prisma.voiceCache.findUnique({
+      where: { question: perguntaNormalizada }
+    });
+
+    if (matchExato) {
+      console.log(`[VOICE_CACHE] ✓ Match Exato encontrado (100%)`);
+      return {
+        id: matchExato.id,
+        perguntaOriginal: matchExato.question,
+        audioUrl: matchExato.audioUrl,
+        voiceId: matchExato.voiceId,
+        similaridade: 1.0,
+        usageCount: matchExato.usageCount,
+        lastUsed: matchExato.lastUsed
+      };
+    }
+
+    // Se o threshold for muito alto (IA), e não deu match exato, nem tentamos o resto para poupar CPU
+    if (threshold >= 0.98) {
+      console.log('[VOICE_CACHE] ✗ Nenhum match exato para IA');
+      return null;
+    }
+
+    // Buscar todas as perguntas cacheadas para similaridade (apenas se necessário)
     const todasAsPerguntas = await prisma.voiceCache.findMany({
       select: {
         id: true,

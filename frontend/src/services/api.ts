@@ -27,6 +27,20 @@ export async function sendText(text: string): Promise<ChatResponse> {
   return res.json();
 }
 
+export async function predictAI(text: string): Promise<{ willCallAI: boolean }> {
+  try {
+    const res = await fetch(`${API_URL}/api/predict`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) return { willCallAI: true };
+    return res.json();
+  } catch {
+    return { willCallAI: true };
+  }
+}
+
 export async function sendAudio(audioBlob: Blob): Promise<ChatResponse> {
   const formData = new FormData();
   formData.append("audio", audioBlob, "user_voice.webm");
@@ -44,3 +58,44 @@ export async function sendAudio(audioBlob: Blob): Promise<ChatResponse> {
 
   return res.json();
 }
+
+// Objeto api genérico para suportar chamadas REST (padrão Axios-like)
+export const api = {
+  getHeaders: () => {
+    const token = localStorage.getItem('acessoia_token');
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+  },
+
+  get: async (endpoint: string) => {
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      headers: api.getHeaders()
+    });
+    if (!res.ok) throw new Error(`Erro na requisição: ${res.status}`);
+    const data = await res.json();
+    return { data };
+  },
+
+  post: async (endpoint: string, body?: unknown) => {
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      method: 'POST',
+      headers: api.getHeaders(),
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`Erro na requisição: ${res.status}`);
+    const data = await res.json();
+    return { data };
+  },
+
+  delete: async (endpoint: string) => {
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      method: 'DELETE',
+      headers: api.getHeaders()
+    });
+    if (!res.ok) throw new Error(`Erro na requisição: ${res.status}`);
+    const data = await res.json();
+    return { data };
+  }
+};

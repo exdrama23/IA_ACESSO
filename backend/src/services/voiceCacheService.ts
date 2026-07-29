@@ -23,6 +23,7 @@ export interface VoiceCacheMatch {
   id: string;
   perguntaOriginal: string;
   audioUrl: string;
+  audioPublicId?: string | null;
   voiceId: string;
   similaridade: number;
   usageCount: number;
@@ -76,6 +77,7 @@ export async function buscarAudioSimilarEmVoiceCache(
         id: true,
         question: true,
         audioUrl: true,
+        audioPublicId: true,
         voiceId: true,
         usageCount: true,
         lastUsed: true
@@ -116,6 +118,7 @@ export async function buscarAudioSimilarEmVoiceCache(
         id: melhor.id,
         perguntaOriginal: melhor.question,
         audioUrl: melhor.audioUrl,
+        audioPublicId: melhor.audioPublicId,
         voiceId: melhor.voiceId,
         similaridade: melhor.similarity,
         usageCount: melhor.usageCount,
@@ -152,6 +155,7 @@ export async function buscarAudioSimilarEmVoiceCache(
         id: melhor.id,
         perguntaOriginal: melhor.question,
         audioUrl: melhor.audioUrl,
+        audioPublicId: melhor.audioPublicId,
         voiceId: melhor.voiceId,
         similaridade: melhor.similarity,
         usageCount: melhor.usageCount,
@@ -191,6 +195,7 @@ export async function buscarAudioSimilarEmVoiceCache(
         id: melhor.id,
         perguntaOriginal: melhor.question,
         audioUrl: melhor.audioUrl,
+        audioPublicId: melhor.audioPublicId,
         voiceId: melhor.voiceId,
         similaridade: melhor.similarity,
         usageCount: melhor.usageCount,
@@ -232,39 +237,34 @@ export async function incrementarUsageCount(voiceCacheId: string): Promise<void>
 export async function salvarAudioEmVoiceCache(
   pergunta: string,
   audioUrl: string,
-  voiceId: string = 'elevenlabs_default'
+  voiceId: string = 'elevenlabs_default',
+  audioPublicId?: string,
+  embedding?: number[]
 ): Promise<string | null> {
   try {
     const perguntaNormalizada = normalizarPergunta(pergunta);
+    const id = `vc_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Verificar se já existe (por pergunta normalizada)
-    const existe = await prisma.voiceCache.findUnique({
-      where: { question: perguntaNormalizada }
-    });
-
-    if (existe) {
-      console.log(`[VOICE_CACHE] Pergunta já existe: "${pergunta}"`);
-      return existe.id;
+    // Usar SQL bruto para lidar com o campo vector (Unsupported)
+    if (embedding && embedding.length > 0) {
+      const vectorStr = `[${embedding.join(',')}]`;
+      await prisma.$executeRawUnsafe(`
+        INSERT INTO "VoiceCache" (id, question, "audioUrl", "audioPublicId", "voiceId", embedding, "lastUsed", "createdAt")
+        VALUES ($1, $2, $3, $4, $5, '${vectorStr}'::vector, NOW(), NOW())
+        ON CONFLICT (question) DO UPDATE SET "audioUrl" = $3, "audioPublicId" = $4, "usageCount" = "VoiceCache"."usageCount" + 1, "lastUsed" = NOW()
+      `, id, perguntaNormalizada, audioUrl, audioPublicId || null, voiceId);
+    } else {
+      await prisma.$executeRawUnsafe(`
+        INSERT INTO "VoiceCache" (id, question, "audioUrl", "audioPublicId", "voiceId", "lastUsed", "createdAt")
+        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+        ON CONFLICT (question) DO UPDATE SET "audioUrl" = $3, "audioPublicId" = $4, "usageCount" = "VoiceCache"."usageCount" + 1, "lastUsed" = NOW()
+      `, id, perguntaNormalizada, audioUrl, audioPublicId || null, voiceId);
     }
 
-    const novo = await prisma.voiceCache.create({
-      data: {
-        question: perguntaNormalizada,
-        audioUrl,
-        voiceId,
-        usageCount: 1,
-        lastUsed: new Date()
-      }
-    });
-
-    console.log(`[VOICE_CACHE] ✓ Novo áudio salvo em VoiceCache`);
-    console.log(`[VOICE_CACHE] ID: ${novo.id}`);
-    console.log(`[VOICE_CACHE] Pergunta: "${pergunta}"`);
-    console.log(`[VOICE_CACHE] URL: ${audioUrl}`);
-
-    return novo.id;
+    console.log(`[VOICE_CACHE] ✓ Áudio salvo/atualizado com sucesso`);
+    return id;
   } catch (error) {
-    console.error('[VOICE_CACHE] Erro ao salvar áudio:', error);
+    console.error('[VOICE_CACHE] Erro ao salvar áudio no cache:', error);
     return null;
   }
 }

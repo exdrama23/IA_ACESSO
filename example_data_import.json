@@ -1,0 +1,92 @@
+[
+  {
+    "question": "Qual é o preço da internet fibra 50 mega?",
+    "answer": "O plano de 50 Mega custa R$ 79,90 por mês e oferece velocidade de download de até 50 Mbps, ideal para casas com 2-3 pessoas ou pequenos escritórios.",
+    "category": "internet_fibra",
+    "source": "faq_oficial"
+  },
+  {
+    "question": "Quanto custa a internet de fibra?",
+    "answer": "Oferecemos planos de fibra óptica com diferentes velocidades: 50 Mega (R$ 79,90), 150 Mega (R$ 99,90), 300 Mega (R$ 119,90) e 600 Mega (R$ 129,90) por mês.",
+    "category": "internet_fibra",
+    "source": "faq_oficial"
+  },
+  {
+    "question": "Qual o valor do plano de 150 megas?",
+    "answer": "O plano de 150 Mega custa R$ 99,90 por mês e é recomendado para casas com 4-5 pessoas ou com uso intensivo de streaming e videoconferências.",
+    "category": "internet_fibra",
+    "source": "faq_oficial"
+  },
+  {
+    "question": "Tem plano de internet para professor?",
+    "answer": "Sim! Temos o plano Fibra Professor com 200 Mega por R$ 90,00 por mês, exclusivamente para educadores. Esse é nosso plano especial com melhor custo-benefício.",
+    "category": "internet_fibra",
+    "source": "faq_oficial"
+  },
+  {
+    "question": "O que vem incluído nos planos de fibra?",
+    "answer": "Todos os nossos planos de fibra já incluem o Skeelo, que oferece acesso a diversos livros digitais sem custo adicional. Além disso, contamos com suporte técnico 24/7.",
+    "category": "internet_fibra",
+    "source": "faq_oficial"
+  },
+  {
+    "question": "Como funciona o Acesso Saúde?",
+    "answer": "O Acesso Saúde oferece dois tipos de planos: Clínica Médica com consultas presenciais e Telemedicina com atendimento online. Os planos começam a partir de R$ 19,90 por mês.",
+    "category": "acesso_saude",
+    "source": "faq_oficial"
+  },
+  {
+    "question": "Qual é o valor do plano de saúde familiar?",
+    "answer": "O plano Família custa R$ 59,90 por mês e oferece consultas ilimitadas com Clínico Geral e Pediatra, além de 5 consultas mensais com especialistas para toda a família.",
+    "category": "acesso_saude",
+    "source": "faq_oficial"
+  },
+  {
+    "question": "Como fazer para contratar internet fibra?",
+    "answer": "Você pode contratar através do nosso site (www.acesso.net), por telefone (3133-XXXX) ou visitando uma de nossas filiais. O processo é rápido e leva cerca de 10 minutos.",
+    "category": "contratacao",
+    "source": "faq_oficial"
+  },
+  {
+    "question": "Qual é o tempo de instalação da fibra?",
+    "answer": "Geralmente conseguimos instalar a fibra em até 3 dias úteis após a contratação. Em algumas áreas pode levar até 7 dias úteis dependendo da demanda.",
+    "category": "instalacao",
+    "source": "faq_oficial"
+  },
+  {
+    "question": "O que fazer se a internet estiver lenta?",
+    "answer": "Você pode fazer um teste de velocidade no nosso site para confirmar se está dentro do esperado. Se estiver abaixo do plano contratado, entre em contato com suporte que iremos investigar e resolver o problema.",
+    "category": "suporte",
+    "source": "faq_oficial"
+  },
+  {
+    "question": "Como faço para cancelar minha internet?",
+    "answer": "Para cancelar, você pode ligar para nosso suporte (3133-XXXX), enviar email ou aceder sua conta no portal. Informaremos sobre multa contratual se aplicável.",
+    "category": "cancelamento",
+    "source": "faq_oficial"
+  },
+  {
+    "question": "Há multa para cancelamento de contrato?",
+    "answer": "A multa contratual é de 50% do valor mensal multiplicado pelos meses restantes do contrato de fidelidade (geralmente 12 meses). Se o contrato expirou, não há multa.",
+    "category": "cancelamento",
+    "source": "faq_oficial"
+  },
+  {
+    "question": "Como ativar meu plano de saúde?",
+    "answer": "Após a contratação, você receberá um email com o link de ativação. Clique no link, crie sua senha e sua conta estará ativa em até 2 horas.",
+    "category": "acesso_saude",
+    "source": "faq_oficial"
+  },
+  {
+    "question": "Posso mudar de plano depois de contratar?",
+    "answer": "Sim, você pode fazer upgrade ou downgrade do seu plano a qualquer momento. A mudança entra em vigor no próximo ciclo de faturamento.",
+    "category": "planos",
+    "source": "faq_oficial"
+  },
+  {
+    "question": "Há taxa de instalação para a internet?",
+    "answer": "Oferecemos diferentes promoções ao longo do ano. Atualmente, a instalação é gratuita para novos clientes em planos anuais. Consulte as promoções vigentes.",
+    "category": "promocoes",
+    "source": "faq_oficial"
+  }
+]

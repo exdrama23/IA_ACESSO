@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Avatar3D } from "../components/Avatar3D";
 import { AudioButton } from "../components/AudioButton";
 import { StatusIndicator } from "../components/StatusIndicator";
+import { ThinkingBubble } from "../components/ThinkingBubble";
 import { useChat } from "../hooks/useChat";
 import { useRobustHandTracking } from "../hooks/useRobustHandTracking";
 import { useSpeechInterruption } from "../hooks/useSpeechInterruption";

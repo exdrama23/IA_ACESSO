@@ -151,3 +151,68 @@ export const epicenterFragmentShader = `
     gl_FragColor = vec4(finalColor, 1.0);
   }
 `;
+
+export const speechBubbleVertexShader = `
+  varying vec3 vNormal;
+  varying vec3 vPosition;
+  varying vec3 vWorldPosition;
+  varying vec2 vUv;
+
+  void main() {
+    vUv = uv;
+    
+    vec3 pos = position;
+    vec3 normPos = normalize(position);
+
+    pos.y *= 0.85;
+
+    vec3 tailDir = normalize(vec3(-0.7, -0.8, 0.3));
+    
+    float tailInfluence = smoothstep(0.85, 1.0, dot(normPos, tailDir));
+    
+    float tailLength = 0.55;
+    pos += tailDir * (pow(tailInfluence, 2.0) * tailLength);
+
+    vPosition = pos;
+
+    vec4 worldPosition = modelMatrix * vec4(pos, 1.0);
+    vWorldPosition = worldPosition.xyz;
+
+    vNormal = normalize(normalMatrix * normal);
+
+    gl_Position = projectionMatrix * viewMatrix * worldPosition;
+  }
+`;
+
+export const speechBubbleFragmentShader = `
+  varying vec3 vNormal;
+  varying vec3 vPosition;
+  varying vec3 vWorldPosition;
+  varying vec2 vUv;
+
+  void main() {
+    vec3 normal = normalize(vNormal);
+
+    vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+
+    vec3 lightDirMain = normalize(vec3(1.0, 1.5, 2.0)); 
+    vec3 lightDirFill = normalize(vec3(-1.0, -0.5, -1.0)); 
+
+    vec3 baseColor = vec3(0.96, 0.96, 0.98);
+
+    float diffMain = max(dot(normal, lightDirMain), 0.0);
+    float diffFill = max(dot(normal, lightDirFill), 0.0) * 0.25;
+    vec3 diffuse = baseColor * (diffMain + diffFill + 0.35);
+
+    vec3 halfVector = normalize(lightDirMain + viewDir);
+    float spec = pow(max(dot(normal, halfVector), 0.0), 90.0); 
+    vec3 specular = vec3(1.0) * spec * 0.6;
+
+    float fresnel = pow(1.0 - max(dot(viewDir, normal), 0.0), 3.0);
+    vec3 rimLight = vec3(1.0) * fresnel * 0.3;
+
+    vec3 finalColor = diffuse + specular + rimLight;
+
+    gl_FragColor = vec4(finalColor, 1.0);
+  }
+`;

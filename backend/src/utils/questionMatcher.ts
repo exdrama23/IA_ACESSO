@@ -86,7 +86,13 @@ export async function findSimilarCachedQuestion(
     const categoryFromFAQ = findCategoryInFAQ(perguntaNova);
     console.log(`[MATCHER] Categoria do FAQ: ${categoryFromFAQ || "Nenhuma"}`);
 
-    const allKeys = await client.keys("cache:audio:*");
+    const allKeys: string[] = [];
+    let cursor = '0';
+    do {
+      const result = await client.scan(cursor, 'MATCH', "cache:audio:*", 'COUNT', 100);
+      cursor = result[0];
+      allKeys.push(...result[1]);
+    } while (cursor !== '0');
     
     if (!allKeys || allKeys.length === 0) {
       console.log("[MATCHER] ✗ Nenhuma pergunta cacheada encontrada no Redis");

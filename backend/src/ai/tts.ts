@@ -8,7 +8,7 @@ import {
   salvarAudioEmVoiceCache 
 } from "../services/voiceCacheService";
 
-export async function gerarAudio(texto: string, forcarGeracao: boolean = false, threshold: number = 0.85): Promise<string> {
+export async function gerarAudio(texto: string, forcarGeracao: boolean = false, threshold: number = 0.85): Promise<{ audioUrl: string; publicId: string | null }> {
   console.log(`\n[TTS] ════════════════════════════════════════`);
   console.log(`[TTS] Processando TTS para: "${texto.substring(0, 80)}..."`);
   console.log(`[TTS] Limiar de Cache: ${(threshold * 100).toFixed(1)}%`);
@@ -39,7 +39,7 @@ export async function gerarAudio(texto: string, forcarGeracao: boolean = false, 
       });
       
       console.log(`[TTS] ════════════════════════════════════════\n`);
-      return audioSimilar.audioUrl;
+      return { audioUrl: audioSimilar.audioUrl, publicId: audioSimilar.audioPublicId || null };
     }
   }
 
@@ -109,7 +109,7 @@ export async function gerarAudio(texto: string, forcarGeracao: boolean = false, 
     console.error(`[TTS] Arquivo: backend/.env`);
     console.error(`[TTS] Variável: ELEVENLABS_API_KEY`);
     console.error(`[TTS] ════════════════════════════════════════\n`);
-    return "";
+    return { audioUrl: "", publicId: null };
   }
 
   // ============ PASSO 4: UPLOAD PARA CLOUDINARY ============
@@ -126,7 +126,8 @@ export async function gerarAudio(texto: string, forcarGeracao: boolean = false, 
     const voiceCacheId = await salvarAudioEmVoiceCache(
       texto,
       result.secure_url,
-      VOICE_ID
+      VOICE_ID,
+      result.public_id
     );
 
     if (voiceCacheId) {
@@ -134,10 +135,10 @@ export async function gerarAudio(texto: string, forcarGeracao: boolean = false, 
     }
 
     console.log(`[TTS] ════════════════════════════════════════\n`);
-    return result.secure_url;
+    return { audioUrl: result.secure_url, publicId: result.public_id };
   } catch (cloudinaryError) {
     console.error("[CLOUDINARY] ✗ Erro ao fazer upload:", cloudinaryError);
     console.log(`[TTS] ════════════════════════════════════════\n`);
-    return "";
+    return { audioUrl: "", publicId: null };
   }
 }

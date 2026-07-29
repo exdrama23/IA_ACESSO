@@ -3,7 +3,8 @@ import {
   Bell, HelpCircle, LayoutDashboard, User, 
   Calendar, BarChart2, Zap, Database, LogOut, 
   RefreshCw, Mic, 
-  ChevronLeft, ChevronRight, MessageSquare 
+  ChevronLeft, ChevronRight, MessageSquare,
+  Shield, Book, Brain
 } from 'lucide-react';
 import Logo from '../assets/LogoAcesso2.png';
 
@@ -16,10 +17,13 @@ import { DatabaseVisualizerView } from '../components/AdminDashboard/DatabaseVis
 import { NotificationsView } from '../components/AdminDashboard/NotificationsView';
 import { HelpDocumentationView } from '../components/AdminDashboard/HelpDocumentationView';
 import { VoicesAvatarView } from '../components/AdminDashboard/VoicesAvatarView';
+import MaintenanceToolsView from '../components/AdminDashboard/MaintenanceToolsView';
+import KnowledgeVisualizerView from '../components/AdminDashboard/KnowledgeVisualizerView';
+import AITrainingQueueView from '../components/AdminDashboard/AITrainingQueueView';
 import { useAppStore } from '../store/useAppStore';
 import { API_URL } from '../services/api';
 
-type ViewType = 'dashboard' | 'user' | 'calendar' | 'metrics' | 'integrations' | 'database' | 'notifications' | 'help' | 'voices';
+type ViewType = 'dashboard' | 'user' | 'calendar' | 'metrics' | 'integrations' | 'database' | 'notifications' | 'help' | 'voices' | 'maintenance' | 'knowledge' | 'curation';
 
 export function AdminConfig() {
   const [data, setData] = useState<any>(null);
@@ -254,6 +258,60 @@ export function AdminConfig() {
                     </div>
                   )}
                 </button>
+
+                <button 
+                  onClick={() => setActiveView('maintenance')}
+                  className={`relative flex items-center gap-4 px-3 py-2.5 rounded-xl font-medium transition-all group w-full cursor-pointer ${
+                    activeView === 'maintenance' 
+                      ? 'bg-blue-50 text-blue-600 font-bold' 
+                      : 'text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  <Shield className="w-5 h-5 shrink-0" />
+                  {sidebarOpen && <span className="whitespace-nowrap">Manutenção Neural</span>}
+                  
+                  {!sidebarOpen && (
+                    <div className="absolute left-full ml-4 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+                      Manutenção
+                    </div>
+                  )}
+                </button>
+
+                <button 
+                  onClick={() => setActiveView('knowledge')}
+                  className={`relative flex items-center gap-4 px-3 py-2.5 rounded-xl font-medium transition-all group w-full cursor-pointer ${
+                    activeView === 'knowledge' 
+                      ? 'bg-blue-50 text-blue-600 font-bold' 
+                      : 'text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  <Book className="w-5 h-5 shrink-0" />
+                  {sidebarOpen && <span className="whitespace-nowrap">Conhecimento</span>}
+                  
+                  {!sidebarOpen && (
+                    <div className="absolute left-full ml-4 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+                      Conhecimento
+                    </div>
+                  )}
+                </button>
+
+                <button 
+                  onClick={() => setActiveView('curation')}
+                  className={`relative flex items-center gap-4 px-3 py-2.5 rounded-xl font-medium transition-all group w-full cursor-pointer ${
+                    activeView === 'curation' 
+                      ? 'bg-blue-50 text-blue-600 font-bold' 
+                      : 'text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  <Brain className="w-5 h-5 shrink-0" />
+                  {sidebarOpen && <span className="whitespace-nowrap">Curadoria IA</span>}
+                  
+                  {!sidebarOpen && (
+                    <div className="absolute left-full ml-4 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+                      Curadoria
+                    </div>
+                  )}
+                </button>
                 
                 <button 
                    onClick={() => setActiveView('metrics')}
@@ -420,6 +478,9 @@ export function AdminConfig() {
             {activeView === 'database' && <DatabaseVisualizerView />}
             {activeView === 'notifications' && <NotificationsView />}
             {activeView === 'help' && <HelpDocumentationView />}
+            {activeView === 'maintenance' && <MaintenanceToolsView />}
+            {activeView === 'knowledge' && <KnowledgeVisualizerView />}
+            {activeView === 'curation' && <AITrainingQueueView />}
             {activeView === 'voices' && (
               <VoicesAvatarView 
                 config={config} 

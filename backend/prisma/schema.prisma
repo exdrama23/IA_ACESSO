@@ -1,13 +1,16 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider = "postgresql"
+  extensions = [pgvector(map: "vector")]
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
+  // ... (rest of User model unchanged)
   email     String   @unique
   password  String   
   name      String?
@@ -33,7 +36,7 @@ model User {
 }
 
 model CalendarEvent {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   adminId   String
   admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
   
@@ -50,7 +53,7 @@ model CalendarEvent {
 }
 
 model LoginAttempt {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   userId    String?  
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   
@@ -67,7 +70,7 @@ model LoginAttempt {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   
@@ -89,7 +92,7 @@ model AuditLog {
 }
 
 model ChatHistory {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   
@@ -100,8 +103,13 @@ model ChatHistory {
   source    String   
   confidence Float  @default(0.0) 
   audioUrl  String?  
-  
-  embedding String? @db.Text 
+  audioPublicId String?
+
+  isVerified        Boolean  @default(false)
+  needsRevalidation Boolean  @default(false)
+  knowledgeVersion  String?
+
+  embedding Unsupported("vector(384)")?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt 
@@ -110,10 +118,13 @@ model ChatHistory {
   @@index([sessionId])
   @@index([createdAt])
   @@index([source])
+  @@index([isVerified])
+  @@index([needsRevalidation])
+  // Vector index created manually in migration with IVFFLAT for cosine similarity
 }
 
 model ApiCall {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   
@@ -162,7 +173,7 @@ model SystemConfig {
 }
 
 model ApiUsage {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   
   service   String   
   tokens    Int?     
@@ -180,7 +191,7 @@ model ApiUsage {
 }
 
 model Notification {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   adminId   String
   admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
   
@@ -198,7 +209,7 @@ model Notification {
 }
 
 model NotificationPreference {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   adminId   String   @unique
   admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
   
@@ -211,10 +222,12 @@ model NotificationPreference {
 }
 
 model VoiceCache {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   question  String   @unique @db.Text
   audioUrl  String   @db.Text
+  audioPublicId String?
   voiceId   String
+  embedding Unsupported("vector(384)")?
   
   usageCount Int     @default(1)
   lastUsed   DateTime @default(now())
@@ -225,7 +238,7 @@ model VoiceCache {
 }
 
 model IntegrationKey {
-  id           String   @id @default(cuid())
+  id           String   @id @default(uuid())
   adminId      String
   admin        User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
   

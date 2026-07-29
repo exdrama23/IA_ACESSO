@@ -4,7 +4,7 @@ import multer from "multer";
 import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
-import { chat } from "./controllers/chat";
+import { chat, predictResponseType } from "./controllers/chat";
 import { initFAQEmbeddings } from "./ai/embeddings";
 import { initSemantic } from "./ai/semantic";
 import { neuralDetector } from "./ai/neuralEmbeddings";
@@ -59,6 +59,13 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }
 });
 
+import { 
+  invalidateVersion, 
+  invalidatePattern, 
+  getPendingCuration, 
+  verifyRecord 
+} from "./controllers/adminMaintenance";
+
 app.get("/health", healthCheck);
 app.post("/auth/login", createRateLimiter({ windowMs: 900000, maxRequests: 10 }), login);
 app.post("/auth/forgot-password", createRateLimiter({ windowMs: 900000, maxRequests: 5 }), forgotPassword);
@@ -71,6 +78,11 @@ app.post("/api/chat",
   },
   upload.single("audio"), 
   chat
+);
+
+// 🎯 Novo endpoint: Predizer se será cache ou IA (para mostrar notificação)
+app.post("/api/predict",
+  predictResponseType
 );
 
 app.get("/admin/dashboard", verifyToken, requireAdmin, getAdminDashboard);
@@ -102,6 +114,12 @@ app.post("/admin/integrations/update", verifyToken, requireAdmin, updateIntegrat
 app.get("/admin/voice-cache/stats", verifyToken, requireAdmin, getVoiceCacheStatistics);
 app.get("/admin/voice-cache/list", verifyToken, requireAdmin, listarVoiceCache);
 app.post("/admin/voice-cache/limpar", verifyToken, requireAdmin, limparVoiceCacheAntigo);
+
+// ============ ROTAS DE MANUTENÇÃO E CURADORIA IA ============
+app.post("/admin/maintenance/invalidate-version", verifyToken, requireAdmin, invalidateVersion);
+app.post("/admin/maintenance/invalidate-pattern", verifyToken, requireAdmin, invalidatePattern);
+app.get("/admin/maintenance/pending-curation", verifyToken, requireAdmin, getPendingCuration);
+app.post("/admin/maintenance/verify-record/:id", verifyToken, requireAdmin, verifyRecord);
 
 app.post("/auth/logout", verifyToken, logout);
 

@@ -10,7 +10,13 @@ export interface AuthRequest extends Request {
   };
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-prod';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.error('[AUTH] JWT_SECRET não definido no ambiente! Usando fallback inseguro.');
+}
+
+const getJwtSecret = () => JWT_SECRET || 'dev-secret-change-in-prod';
 
 export function verifyToken(req: Request, res: Response, next: NextFunction) {
   try {
@@ -20,7 +26,7 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
       return res.status(401).json({ error: 'Token não fornecido' });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const decoded = jwt.verify(token, getJwtSecret()) as any;
     (req as AuthRequest).user = decoded;
     next();
   } catch (error) {
@@ -46,7 +52,7 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
 export function generateToken(userId: string, email: string, role: 'admin' | 'user') {
   return jwt.sign(
     { id: userId, email, role },
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: '24h' }
   );
 }

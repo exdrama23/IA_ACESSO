@@ -1,0 +1,615 @@
+{
+  "wake_words": [
+    "windows",
+    "computador",
+    "assistente"
+  ],
+  "tts": {
+    "voice": "pt-BR-FranciscaNeural",
+    "rate": 0,
+    "volume": 1.0
+  },
+  "watchdog": {
+    "enabled": true,
+    "folder": "",
+    "delay_seconds": 3,
+    "temp_extensions": [
+      ".crdownload",
+      ".part",
+      ".tmp",
+      ".download",
+      ".opdownload"
+    ]
+  },
+  "startup": {
+    "enabled": true
+  },
+  "commands": [
+    {
+      "trigger": "(?:abra|abre|abreu|abrir|open)\\s+(?:o|a)?\\s*(.+)",
+      "action": "open_app",
+      "params": {},
+      "feedback": "Abrindo {1}",
+      "enabled": true
+    },
+    {
+      "trigger": "feche o (.+)",
+      "action": "close_app",
+      "params": {},
+      "feedback": "Fechando {1}",
+      "enabled": true
+    },
+    {
+      "trigger": "feche tudo|fechar tudo|fecha tudo|mate tudo|mata tudo",
+      "action": "close_all",
+      "params": {},
+      "feedback": "Fechando todos os aplicativos",
+      "enabled": true
+    },
+    {
+      "trigger": "organize|organizar|arrumar downloads",
+      "action": "organize",
+      "params": {},
+      "feedback": "Organizando Downloads",
+      "enabled": true
+    },
+    {
+      "trigger": "abra o projeto (.+)",
+      "action": "open_project",
+      "params": {},
+      "feedback": "Abrindo projeto {1}",
+      "enabled": true
+    },
+    {
+      "trigger": "desligue|desligar|desliga",
+      "action": "system",
+      "params": {
+        "action": "shutdown"
+      },
+      "feedback": "Desligando o computador",
+      "enabled": true
+    },
+    {
+      "trigger": "desligue em (.+) (minutos|minuto)",
+      "action": "system",
+      "params": {
+        "action": "shutdown_timer"
+      },
+      "feedback": "Desligando em {1} minutos",
+      "enabled": true
+    },
+    {
+      "trigger": "cancele desligamento|cancelar desligamento",
+      "action": "system",
+      "params": {
+        "action": "cancel_shutdown"
+      },
+      "feedback": "Desligamento cancelado",
+      "enabled": true
+    },
+    {
+      "trigger": "reinicie|reiniciar|reinicia",
+      "action": "system",
+      "params": {
+        "action": "restart"
+      },
+      "feedback": "Reiniciando o computador",
+      "enabled": true
+    },
+    {
+      "trigger": "hibernar|hiberna",
+      "action": "system",
+      "params": {
+        "action": "hibernate"
+      },
+      "feedback": "Hibernando",
+      "enabled": true
+    },
+    {
+      "trigger": "suspender|dormir|suspende",
+      "action": "system",
+      "params": {
+        "action": "sleep"
+      },
+      "feedback": "Suspendo o computador",
+      "enabled": true
+    },
+    {
+      "trigger": "bloqueie|bloquear|travar|trava",
+      "action": "system",
+      "params": {
+        "action": "lock"
+      },
+      "feedback": null,
+      "enabled": true
+    },
+    {
+      "trigger": "volume (.+)",
+      "action": "system",
+      "params": {
+        "action": "volume"
+      },
+      "feedback": "Volume ajustado para {1}",
+      "enabled": true
+    },
+    {
+      "trigger": "aumente volume|aumentar volume|mais alto",
+      "action": "system",
+      "params": {
+        "action": "volume_up"
+      },
+      "feedback": "Volume aumentado",
+      "enabled": true
+    },
+    {
+      "trigger": "diminua volume|diminuir volume|mais baixo",
+      "action": "system",
+      "params": {
+        "action": "volume_down"
+      },
+      "feedback": "Volume diminuído",
+      "enabled": true
+    },
+    {
+      "trigger": "mutar|sem som|mudo|silenciar",
+      "action": "system",
+      "params": {
+        "action": "mute"
+      },
+      "feedback": "Sem som",
+      "enabled": true
+    },
+    {
+      "trigger": "ativar som|desmutar|voltar som",
+      "action": "system",
+      "params": {
+        "action": "unmute"
+      },
+      "feedback": "Som ativado",
+      "enabled": true
+    },
+    {
+      "trigger": "tire print|tirar print|captura de tela|print screen|print",
+      "action": "system",
+      "params": {
+        "action": "screenshot"
+      },
+      "feedback": "Print salvo",
+      "enabled": true
+    },
+    {
+      "trigger": "modo escuro|tema escuro|modo dark",
+      "action": "system",
+      "params": {
+        "action": "dark_mode"
+      },
+      "feedback": "Modo escuro ativado",
+      "enabled": true
+    },
+    {
+      "trigger": "modo claro|tema claro|modo light",
+      "action": "system",
+      "params": {
+        "action": "light_mode"
+      },
+      "feedback": "Modo claro ativado",
+      "enabled": true
+    },
+    {
+      "trigger": "pesquise (.+)|pesquisar (.+)|procure (.+)|pesquisa (.+)",
+      "action": "search_web",
+      "params": {},
+      "feedback": "Pesquisando {1}",
+      "enabled": true
+    },
+    {
+      "trigger": "youtube (.+)|procure no youtube (.+)|pesquise no youtube (.+)",
+      "action": "search_youtube",
+      "params": {},
+      "feedback": "Pesquisando {1} no YouTube",
+      "enabled": true
+    },
+    {
+      "trigger": "digite (.+)|escreva (.+)",
+      "action": "type_text",
+      "params": {},
+      "feedback": null,
+      "enabled": true
+    },
+    {
+      "trigger": "git status",
+      "action": "git_command",
+      "params": {
+        "cmd": "status"
+      },
+      "feedback": "Verificando status do Git",
+      "enabled": true
+    },
+    {
+      "trigger": "git add tudo|git add .",
+      "action": "git_command",
+      "params": {
+        "cmd": "add"
+      },
+      "feedback": "Adicionando arquivos",
+      "enabled": true
+    },
+    {
+      "trigger": "git commit (.+)",
+      "action": "git_command",
+      "params": {},
+      "feedback": "Commitando: {1}",
+      "enabled": true
+    },
+    {
+      "trigger": "git push",
+      "action": "git_command",
+      "params": {
+        "cmd": "push"
+      },
+      "feedback": "Enviando para o repositório",
+      "enabled": true
+    },
+    {
+      "trigger": "git pull",
+      "action": "git_command",
+      "params": {
+        "cmd": "pull"
+      },
+      "feedback": "Puxando do repositório",
+      "enabled": true
+    },
+    {
+      "trigger": "execute (.+)|roda (.+)|executar (.+)",
+      "action": "execute",
+      "params": {},
+      "feedback": "Executando {1}",
+      "enabled": true
+    },
+    {
+      "trigger": "que horas são|horas|hora atual|que horas",
+      "action": "system",
+      "params": {
+        "action": "time"
+      },
+      "feedback": null,
+      "enabled": true
+    },
+    {
+      "trigger": "qual a data|data de hoje|que dia é hoje",
+      "action": "system",
+      "params": {
+        "action": "date"
+      },
+      "feedback": null,
+      "enabled": true
+    },
+    {
+      "trigger": "qual meu ip|meu ip|ip|qual é meu ip",
+      "action": "system",
+      "params": {
+        "action": "ip"
+      },
+      "feedback": null,
+      "enabled": true
+    },
+    {
+      "trigger": "quanto tempo de bateria|bateria|carga",
+      "action": "system",
+      "params": {
+        "action": "battery"
+      },
+      "feedback": null,
+      "enabled": true
+    },
+    {
+      "trigger": "ajuda|help|comandos|o que você faz",
+      "action": "system",
+      "params": {
+        "action": "help"
+      },
+      "feedback": null,
+      "enabled": true
+    },
+    {
+      "trigger": "minimize tudo|mostrar desktop|mostrar área de trabalho",
+      "action": "system",
+      "params": {
+        "action": "show_desktop"
+      },
+      "feedback": "Mostrando área de trabalho",
+      "enabled": true
+    },
+    {
+      "trigger": "iniciar trabalho|começar trabalho|modo trabalho",
+      "action": "run_macro",
+      "params": {
+        "id": "iniciar_trabalho"
+      },
+      "feedback": "Iniciando ambiente de trabalho",
+      "enabled": true
+    },
+    {
+      "trigger": "boa noite|vou dormir",
+      "action": "run_macro",
+      "params": {
+        "id": "boa_noite"
+      },
+      "feedback": "Boa noite",
+      "enabled": true
+    },
+    {
+      "trigger": "ativar wi-fi|ligar wi-fi|wi-fi on",
+      "action": "system",
+      "params": {
+        "action": "wifi_on"
+      },
+      "feedback": "Wi-Fi ativado",
+      "enabled": true
+    },
+    {
+      "trigger": "desativar wi-fi|desligar wi-fi|wi-fi off",
+      "action": "system",
+      "params": {
+        "action": "wifi_off"
+      },
+      "feedback": "Wi-Fi desativado",
+      "enabled": true
+    }
+  ],
+  "projects": [
+    {
+      "name": "ACESSOIA",
+      "path": "C:\\Users\\pc_ac\\OneDrive\\Desktop\\ACESSOIA",
+      "enabled": true
+    }
+  ],
+  "macros": [
+    {
+      "id": "iniciar_trabalho",
+      "steps": [
+        {
+          "action": "open_app",
+          "params": {
+            "name": "vscode"
+          }
+        },
+        {
+          "action": "open_app",
+          "params": {
+            "name": "terminal"
+          }
+        },
+        {
+          "action": "open_app",
+          "params": {
+            "name": "chrome"
+          }
+        },
+        {
+          "action": "open_app",
+          "params": {
+            "name": "spotify"
+          }
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": "boa_noite",
+      "steps": [
+        {
+          "action": "close_all",
+          "params": {}
+        },
+        {
+          "action": "system",
+          "params": {
+            "action": "shutdown"
+          }
+        }
+      ],
+      "enabled": true
+    }
+  ],
+  "rules": {
+    "Documentos": [
+      ".pdf",
+      ".doc",
+      ".docx",
+      ".txt",
+      ".xlsx",
+      ".xls",
+      ".pptx",
+      ".odt"
+    ],
+    "Imagens": [
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".gif",
+      ".bmp",
+      ".svg",
+      ".webp",
+      ".ico"
+    ],
+    "Videos": [
+      ".mp4",
+      ".avi",
+      ".mkv",
+      ".mov",
+      ".wmv",
+      ".flv"
+    ],
+    "Compactados": [
+      ".zip",
+      ".rar",
+      ".7z",
+      ".tar",
+      ".gz"
+    ],
+    "Instaladores": [
+      ".exe",
+      ".msi",
+      ".iso"
+    ],
+    "Musicas": [
+      ".mp3",
+      ".wav",
+      ".flac",
+      ".aac",
+      ".ogg"
+    ],
+    "Codigo": [
+      ".py",
+      ".js",
+      ".ts",
+      ".html",
+      ".css",
+      ".json",
+      ".xml",
+      ".yaml",
+      ".yml",
+      ".md"
+    ],
+    "Outros": []
+  },
+  "gestures": [
+    {
+      "id": "move",
+      "description": "Só o indicador estendido",
+      "action": "move_mouse",
+      "param": "",
+      "shortcut": "",
+      "enabled": true
+    },
+    {
+      "id": "click",
+      "description": "Pinça: polegar + indicador",
+      "action": "nothing",
+      "param": "",
+      "shortcut": "",
+      "enabled": true
+    },
+    {
+      "id": "right_click",
+      "description": "2 dedos: indicador + médio",
+      "action": "nothing",
+      "param": "",
+      "shortcut": "",
+      "enabled": false
+    },
+    {
+      "id": "scroll",
+      "description": "3+ dedos, mão sobe/desce",
+      "action": "nothing",
+      "param": "",
+      "shortcut": "",
+      "enabled": false
+    },
+    {
+      "id": "fist",
+      "description": "Punho fechado",
+      "action": "nothing",
+      "param": "",
+      "shortcut": "",
+      "enabled": false
+    },
+    {
+      "id": "thumbs_up",
+      "description": "Joinha para cima",
+      "action": "nothing",
+      "param": "",
+      "shortcut": "",
+      "enabled": false
+    },
+    {
+      "id": "thumbs_down",
+      "description": "Joinha invertido",
+      "action": "nothing",
+      "param": "",
+      "shortcut": "",
+      "enabled": false
+    },
+    {
+      "id": "four_fingers",
+      "description": "4 dedos (sem polegar)",
+      "action": "nothing",
+      "param": "",
+      "shortcut": "",
+      "enabled": false
+    },
+    {
+      "id": "open_palm",
+      "description": "Mão aberta (5 dedos)",
+      "action": "nothing",
+      "param": "",
+      "shortcut": "",
+      "enabled": false
+    },
+    {
+      "id": "peace",
+      "description": "V com indicador + médio",
+      "action": "nothing",
+      "param": "",
+      "shortcut": "",
+      "enabled": false
+    },
+    {
+      "id": "ok",
+      "description": "Círculo polegar + indicador",
+      "action": "nothing",
+      "param": "",
+      "shortcut": "",
+      "enabled": false
+    },
+    {
+      "id": "rock",
+      "description": "Chifrinhas (indicador + mindinho)",
+      "action": "nothing",
+      "param": "",
+      "shortcut": "",
+      "enabled": false
+    },
+    {
+      "id": "point_left",
+      "description": "Indicador estendido p/ esquerda",
+      "action": "nothing",
+      "param": "",
+      "shortcut": "",
+      "enabled": false
+    },
+    {
+      "id": "point_right",
+      "description": "Indicador estendido p/ direita",
+      "action": "nothing",
+      "param": "",
+      "shortcut": "",
+      "enabled": false
+    },
+    {
+      "id": "thumb_index_up",
+      "description": "Polegar + indicador estendidos",
+      "action": "nothing",
+      "param": "",
+      "shortcut": "",
+      "enabled": true
+    }
+  ],
+  "gesture_settings": {
+    "pinch_threshold": 0.045,
+    "point_x_threshold": 0.1,
+    "thumb_ext_threshold": 0.02,
+    "thumb_down_threshold": 0.04,
+    "drag_delay_seconds": 5.0,
+    "ok_threshold": 0.05,
+    "peace_spread": 0.06,
+    "smoothing": 0.55,
+    "min_move_px": 1,
+    "remap_x_min": 0.08,
+    "remap_x_max": 0.92,
+    "remap_y_min": 0.1,
+    "remap_y_max": 0.8,
+    "frame_skip": 2
+  }
+}

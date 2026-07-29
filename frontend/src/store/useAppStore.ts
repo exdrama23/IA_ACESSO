@@ -19,6 +19,9 @@ interface AppState {
   status: AppStatus;
   setStatus: (status: AppStatus) => void;
 
+  isThinkingDeeply: boolean;
+  setIsThinkingDeeply: (isThinking: boolean) => void;
+
   isRecording: boolean;
   toggleRecording: () => void;
   
@@ -44,6 +47,9 @@ interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   status: "idle",
   setStatus: (status) => set({ status }),
+
+  isThinkingDeeply: false,
+  setIsThinkingDeeply: (isThinkingDeeply) => set({ isThinkingDeeply }),
 
   isRecording: false,
   toggleRecording: () => set((state) => ({ isRecording: !state.isRecording })),

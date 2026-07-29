@@ -1,5 +1,5 @@
 import { useAudioRecorder } from "./useAudioRecorder";
-import { sendText } from "../services/api";
+import { sendText, predictAI } from "../services/api";
 import { useAppStore } from "../store/useAppStore";
 import { useCallback } from "react";
 
@@ -56,6 +56,8 @@ export function useChat() {
   }, [setStatus, setCurrentAudio]);
 
   const handleToggleChat = useCallback(async () => {
+    const { setIsThinkingDeeply } = useAppStore.getState();
+
     if (!isRecording) {
       toggleRecording();
       try {
@@ -74,6 +76,7 @@ export function useChat() {
         const textTranscript = await stop();
         
         if (!textTranscript) {
+          setIsThinkingDeeply(false);
           console.log("Nenhum texto detectado.");
           setStatus("idle");
           return;
@@ -82,6 +85,7 @@ export function useChat() {
         console.log("Texto transcrito:", textTranscript);
 
         if (isRepeatCommand(textTranscript)) {
+          setIsThinkingDeeply(false);
           console.log("[REPETIR] Detectado comando de repetição");
           if (lastResponse && lastResponse.audioUrl) {
             await playAudio(lastResponse.audioUrl);
@@ -93,7 +97,18 @@ export function useChat() {
           }
         }
 
+        // ✅ PREVISÃO DETERMINÍSTICA
+        // Se a previsão indicar que chamará IA, mostramos o balão IMEDIATAMENTE
+        const prediction = await predictAI(textTranscript);
+        if (prediction.willCallAI) {
+          console.log("[CHAT] Previsão: IA será necessária. Ativando balão.");
+          setIsThinkingDeeply(true);
+        } else {
+          console.log("[CHAT] Previsão: Cache hit provável. Mantendo balão oculto.");
+        }
+
         const response = await sendText(textTranscript);
+        setIsThinkingDeeply(false);
         console.log("Resposta da IA:", response.text, `(Fonte: ${response.source})`);
 
         if (response.text && response.audioUrl) {
@@ -109,6 +124,7 @@ export function useChat() {
 
       } catch (error) {
         console.error("Falha na comunicação com o servidor:", error);
+        setIsThinkingDeeply(false);
         setStatus("idle");
       }
     }

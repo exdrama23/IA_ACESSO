@@ -5,6 +5,7 @@ import { vertexShader, fragmentShader } from "./Shaders";
 import { useAppStore } from "../../store/useAppStore";
 import { ContactShadows, Environment } from "@react-three/drei";
 import { VirtualHand } from "../VirtualHand";
+import { DelayedThinkingBubble3D } from "../DelayedThinkingBubble3D";
 
 function Boca() {
   const lineRef = useRef<THREE.Line<THREE.BufferGeometry, THREE.LineBasicMaterial>>(null);
@@ -240,6 +241,7 @@ export function Avatar3D() {
 
         <IAVisual />
         <VirtualHand />
+        <DelayedThinkingBubble3D />
 
         <ContactShadows 
           position={[0, -1.8, 0]} 

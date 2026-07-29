@@ -31,7 +31,7 @@ export class NeuralCategoryDetector {
     try {
       process.env.XENOVA_ALLOW_LOCAL_MODELS = "true";
 
-      const transformers = await (eval('import("@xenova/transformers")') as Promise<typeof import("@xenova/transformers")>);
+      const transformers = await import("@xenova/transformers");
       const { pipeline, env } = transformers;
 
       env.allowLocalModels = true;
@@ -86,7 +86,7 @@ export class NeuralCategoryDetector {
             categoria: item.category,
             resposta: item.answer,
             embedding: Array.from(output.data),
-            linkDirecionamento: item.linkDirecionamento || "https://acesso.net"
+            linkDirecionamento: item.linkDirecionamento || "https://lpg.tech"
           });
 
           totalEmbeddings++;

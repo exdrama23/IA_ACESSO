@@ -23,8 +23,8 @@ async function getNextOpenRouterClient(): Promise<OpenAI | null> {
         apiKey: envKey,
         baseURL: "https://openrouter.ai/api/v1",
         defaultHeaders: {
-          "HTTP-Referer": "https://acessonet.br",
-          "X-OpenRouter-Title": "ACESSO.NET - IA Assistant"
+          "HTTP-Referer": "https://lpg.tech",
+          "X-OpenRouter-Title": "LPG - IA Assistant"
         }
       });
       return currentClient;
@@ -43,8 +43,8 @@ async function getNextOpenRouterClient(): Promise<OpenAI | null> {
         apiKey: primaryKey as string,
         baseURL: "https://openrouter.ai/api/v1",
         defaultHeaders: {
-          "HTTP-Referer": "https://acessonet.br",
-          "X-OpenRouter-Title": "ACESSO.NET - IA Assistant"
+          "HTTP-Referer": "https://lpg.tech",
+          "X-OpenRouter-Title": "LPG - IA Assistant"
         }
       });
       return currentClient;
@@ -60,8 +60,8 @@ async function getNextOpenRouterClient(): Promise<OpenAI | null> {
         apiKey: b1 as string,
         baseURL: "https://openrouter.ai/api/v1",
         defaultHeaders: {
-          "HTTP-Referer": "https://acessonet.br",
-          "X-OpenRouter-Title": "ACESSO.NET - IA Assistant"
+          "HTTP-Referer": "https://lpg.tech",
+          "X-OpenRouter-Title": "LPG - IA Assistant"
         }
       });
       return currentClient;
@@ -77,8 +77,8 @@ async function getNextOpenRouterClient(): Promise<OpenAI | null> {
         apiKey: b2 as string,
         baseURL: "https://openrouter.ai/api/v1",
         defaultHeaders: {
-          "HTTP-Referer": "https://acessonet.br",
-          "X-OpenRouter-Title": "ACESSO.NET - IA Assistant"
+          "HTTP-Referer": "https://lpg.tech",
+          "X-OpenRouter-Title": "LPG - IA Assistant"
         }
       });
       return currentClient;
@@ -119,21 +119,25 @@ export async function askOpenRouter(question: string, context: string = "", hist
       const messages: any[] = [
         {
           role: "system",
-          content: `Você é o Assistente Virtual oficial da ACESSO.NET. Sua missão é fornecer informações EXATAS baseadas na nossa base de conhecimento.
+          content: `Você é o Assistente Virtual oficial da LPG – Link Petróleo e Gás. Sua missão é fornecer informações EXATAS baseadas na nossa base de conhecimento.
+
+SOBRE A LPG:
+A LPG é uma plataforma inteligente que conecta profissionais, empresas prestadoras de serviços e grandes contratantes do setor de petróleo e gás. Usamos IA para fazer matching entre candidatos qualificados e vagas do setor.
 
 DIRETRIZES DE PENSAMENTO:
 1. Analise a pergunta do cliente.
-2. Verifique se a resposta exata está na "Base de Conhecimento" abaixo.
-3. Se a informação não estiver no FAQ, diga que não tem essa informação específica e peça para ele falar com um atendente no 0800 731 1030.
-4. Priorize sempre os dados da ACESSO.NET sobre qualquer conhecimento geral.
+2. Se perguntarem "o que é LPG", explique que é a Link Petróleo e Gás, uma plataforma de conexão profissional para o setor de óleo e gás.
+3. Verifique se a resposta exata está na "Base de Conhecimento" abaixo.
+4. Se a informação não estiver disponível, diga que não tem essa informação específica.
 
-Base de Conhecimento (FAQ):
-${context ? context : "Nenhuma informação específica encontrada no FAQ."}
+Base de Conhecimento:
+${context ? context : "Nenhuma informação específica encontrada."}
 
 REGRAS DE RESPOSTA:
+- Responda APENAS em português.
 - Responda em no máximo 2 frases curtas e diretas.
 - PROIBIDO usar Markdown (negrito, itálico, asteriscos), pois sua resposta será convertida em áudio.
-- NUNCA invente preços ou planos que não estejam no FAQ.`
+- NUNCA invente informações que não estejam na base de conhecimento.`
         }
       ];
 

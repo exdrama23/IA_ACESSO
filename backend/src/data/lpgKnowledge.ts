@@ -1,3 +1,5 @@
+export const KNOWLEDGE_VERSION = "2026-07-28-V1-LPG";
+
 export const lpgKnowledge = {
   companyName: "LPG – Link Petróleo e Gás",
   about: `A LPG – Link Petróleo e Gás é uma startup criada para conectar, de forma inteligente e especializada, profissionais, empresas prestadoras de serviços e grandes contratantes do setor de petróleo e gás. Nosso objetivo é reduzir a distância entre quem busca mão de obra qualificada e quem procura oportunidades profissionais, tornando o processo de contratação mais rápido, eficiente e assertivo.`,

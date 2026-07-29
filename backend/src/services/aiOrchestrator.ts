@@ -1,7 +1,23 @@
 import { askOpenRouter } from "../ai/openrouter";
 import { askOpenAI } from "../ai/openai";
 import { askGemini } from "../ai/gemini";
-import { acessoKnowledge, KNOWLEDGE_VERSION } from "../data/acessoKnowledge";
+import { lpgKnowledge, KNOWLEDGE_VERSION } from "../data/lpgKnowledge";
+
+const LPG_CONTEXT = `
+LPG – Link Petróleo e Gás é uma startup que conecta profissionais, empresas prestadoras de serviços e grandes contratantes do setor de petróleo e gás.
+
+Missão: Reduzir a distância entre quem busca mão de obra qualificada e quem procura oportunidades profissionais no setor de óleo e gás.
+
+Diferencial: IA especializada que analisa perfis, certificações e experiências para fazer matching inteligente em tempo real.
+
+Público-alvo: Profissionais do setor de petróleo e gás, empresas prestadoras de serviços e grandes contratantes.
+
+Funcionalidades: Cadastro de currículos com certificações, experiências offshore e onshore, portfólio de empresas, matching inteligente com IA, recomendação em tempo real, varredura contínua de compatibilidade.
+
+Status: Startup em fase de desenvolvimento e validação do modelo de negócio.
+
+Visão: Tornar-se a principal plataforma inteligente de conexão profissional do setor de petróleo e gás na América Latina.
+`;
 import { trackAICall } from "./costTracker";
 
 export interface OrchestrationResult {
@@ -15,7 +31,7 @@ export async function orchestrateAIResponse(
   question: string, 
   history: any[] = []
 ): Promise<OrchestrationResult> {
-  const context = JSON.stringify(acessoKnowledge);
+  const context = LPG_CONTEXT;
   let answer = "";
   let source = "IA_GENERATED";
 
@@ -40,7 +56,7 @@ export async function orchestrateAIResponse(
   try {
     console.log("[ORCHESTRATOR] Iniciando fase de JULGAMENTO...");
     const judgePrompt = `
-      Você é um JUIZ DE QUALIDADE da ACESSO.NET.
+      Você é um JUIZ DE QUALIDADE da LPG – Link Petróleo e Gás.
       Sua tarefa é validar se a RESPOSTA gerada está 100% de acordo com o CONHECIMENTO OFICIAL da empresa.
 
       CONHECIMENTO OFICIAL:

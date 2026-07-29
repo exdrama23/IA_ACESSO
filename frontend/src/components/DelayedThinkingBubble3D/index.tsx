@@ -6,7 +6,6 @@ import { useAppStore } from "../../store/useAppStore";
 
 export const DelayedThinkingBubble3D = () => {
   const groupRef = useRef<THREE.Group>(null);
-  const materialRef = useRef<THREE.ShaderMaterial>(null);
   const [isVisible, setIsVisible] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { status } = useAppStore();

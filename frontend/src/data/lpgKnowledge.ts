@@ -1,3 +1,12 @@
+export interface Plan {
+  name: string;
+  profile: string;
+  price: number;
+  wifi: string;
+  downloadSpeed?: string;
+  uploadSpeed?: string;
+}
+
 export const KNOWLEDGE_VERSION = "2026-07-28-V1-LPG";
 
 export const lpgKnowledge = {
@@ -27,7 +36,7 @@ export const lpgKnowledge = {
     symmetry: "Recomendações precisas para candidatos e contratantes"
   },
 
-  plans: [],
+  plans: [] as Plan[],
 
   benefits: [
     "Matching inteligente com IA especializada",
